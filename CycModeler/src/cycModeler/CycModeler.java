@@ -14,12 +14,7 @@ import java.util.regex.Pattern;
 
 import org.sbml.libsbml.*;
 
-import edu.iastate.javacyco.Compound;
-import edu.iastate.javacyco.Frame;
-import edu.iastate.javacyco.JavacycConnection;
-import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
-import edu.iastate.javacyco.Pathway;
 import edu.iastate.javacyco.*;
 
 /**
@@ -1299,6 +1294,87 @@ public class CycModeler {
 //		System.out.println("Runtime is " + runtime + " seconds.");
 	}
 	
+//	public void createReactionScaleModelFromEcoCyc() {
+//		String outputFileName = "reaction_sbml.xml";
+//		
+//		ArrayList<String> reactionIDs = new ArrayList<String>();
+//		reactionIDs.add("");
+//		
+//		
+//		ArrayList<String> boundaryMetaboliteIDs = new ArrayList<String>();
+//		boundaryMetaboliteIDs.add("");
+//		
+//		try {
+//			// 1) Create blank model
+//			System.out.println("Generating blank model ...");
+//			SBMLDocument doc = createBlankSBMLDocument("CBiRC", DefaultSBMLLevel, DefaultSBMLVersion);
+//			
+//			// 2) Load all reactions
+//			System.out.println("Loading reactions ...");
+//			ArrayList<Reaction> allReactions = new ArrayList<Reaction>();
+//			for (String reactionID : reactionIDs) allReactions.add((Reaction)Reaction.load(conn, reactionID));
+//			
+//			// 4) Find and instantiate generics
+//			
+//			// 5) Add boundaries
+//			System.out.println("Adding boundary reactions ...");
+//			ArrayList<ReactionInstance> reactions = reactionListToReactionInstances(allReactions);
+//			ArrayList<ReactionInstance> boundaryResults = addBoundaryReactionsByID("CCO-IN", boundaryMetaboliteIDs);
+//			
+//			// 6) Generate SBML model
+//			System.out.println("Generating SBML model ...");
+//			reactions.addAll(boundaryResults);
+//			generateSBMLModel(doc, reactions);
+//			
+//			// 7) Write revised model.
+//			System.out.println("Writing output ...");
+//			SBMLWriter writer = new SBMLWriter();
+//			writer.writeSBML(doc, OutputDirectory + outputFileName);
+//			
+//			System.out.println("Done!");
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+////		Long stop = System.currentTimeMillis();
+////		Long runtime = (stop - start) / 1000;
+////		System.out.println("Runtime is " + runtime + " seconds.");
+//	}
+//	
+//	public void createCustomModel() {
+//		ArrayList<ReactionInstance> reactions = new ArrayList<ReactionInstance>();
+//		
+//		ArrayList<Metabolite> reactants = new ArrayList<Metabolite>();
+//		Metabolite reactant = new Metabolite(null, "Cytoplasm", 1, "CO2");
+//		ArrayList<Metabolite> products = new ArrayList<Metabolite>();
+//		ReactionInstance reaction = new ReactionInstance(null, null, "name", false, reactants, products);
+//		
+//		
+//		
+//		String outputFileName = "reaction_sbml.xml";
+//		
+//		try {
+//			// 1) Create blank model
+//			System.out.println("Generating blank model ...");
+//			SBMLDocument doc = createBlankSBMLDocument("CBiRC", DefaultSBMLLevel, DefaultSBMLVersion);
+//			
+//			// 6) Generate SBML model
+//			System.out.println("Generating SBML model ...");
+//			generateSBMLModel(doc, reactions);
+//			
+//			// 7) Write revised model.
+//			System.out.println("Writing output ...");
+//			SBMLWriter writer = new SBMLWriter();
+//			writer.writeSBML(doc, OutputDirectory + outputFileName);
+//			
+//			System.out.println("Done!");
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+////		Long stop = System.currentTimeMillis();
+////		Long runtime = (stop - start) / 1000;
+////		System.out.println("Runtime is " + runtime + " seconds.");
+//	}
+	
 	public SBMLDocument createBlankSBMLDocument(String modelID, int SBMLLevel, int SBMLVersion) {
 		SBMLDocument doc = new SBMLDocument(SBMLLevel, SBMLVersion);
 		Model model = doc.createModel(modelID);
@@ -1620,6 +1696,21 @@ public class CycModeler {
 		for (Frame metabolite : exchangeMetabolites) {
 			ArrayList<Metabolite> reactants = new ArrayList<Metabolite>();
 			reactants.add(new Metabolite(metabolite, compartment, 1, getChemicalFormula(metabolite)));
+			ArrayList<Metabolite> products = new ArrayList<Metabolite>();
+			products.add(new Metabolite(metabolite, BoundaryCompartmentName, 1, getChemicalFormula(metabolite)));
+			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + ExchangeReactionSuffix, true, reactants, products));
+		}
+		
+		return exchangeReactions;
+	}
+	
+	private ArrayList<ReactionInstance> addBoundaryReactionsByID(String boundaryCompartment, ArrayList<String> exchangeMetaboliteIDs) throws PtoolsErrorException {
+		// Generate exchange reactions
+		ArrayList<ReactionInstance> exchangeReactions = new ArrayList<ReactionInstance>();
+		for (String metaboliteID : exchangeMetaboliteIDs) {
+			Frame metabolite = Frame.load(conn, metaboliteID);
+			ArrayList<Metabolite> reactants = new ArrayList<Metabolite>();
+			reactants.add(new Metabolite(metabolite, boundaryCompartment, 1, getChemicalFormula(metabolite)));
 			ArrayList<Metabolite> products = new ArrayList<Metabolite>();
 			products.add(new Metabolite(metabolite, BoundaryCompartmentName, 1, getChemicalFormula(metabolite)));
 			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + ExchangeReactionSuffix, true, reactants, products));
@@ -3255,6 +3346,84 @@ public class CycModeler {
 		}
 	}
 	
+	private void palssonToCytoscape() {
+//		String fileName = "/home/Jesse/Desktop/ecocyc_model/mapping/iAF1260-ecocyc-rxn-mappings.txt";
+//		File reactionMapFile = new File(fileName);
+//		BufferedReader reader = null;
+//		
+//		try {
+//			reader = new BufferedReader(new FileReader(reactionMapFile));
+//			String text = null;
+//			
+//			// Headers
+//			String header = reader.readLine();
+//			output += header.trim();
+//			output += "\tecocycID\tecoCommonName\tecoEC\tecoGene\tecoSynonyms\tECMatch\tbNumMatch\tisClass\n";
+//			
+//			while ((text = reader.readLine()) != null) {
+//				String[] line = text.split("\t", 11);
+//				
+//				// palsson info
+//				String abbreviation = line[0];
+//				String officialName = line[1];
+//				String equation = line[2];
+//				String geneAssociation = line[3];
+//				String proteinClass = line[4];
+//				String ecocycrxnids = line[5];
+//				String analysis = line[6];
+//				String notes = line[7];
+//			}
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		finally {
+//			try {
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			try {
+//				if (reader != null) {
+//					reader.close();
+//				}
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		
+//		
+//		Network rst = new Network("palsson_reaction_network");
+//		ArrayList<Reaction> rxns = this.getReactions();
+//		for(Reaction i : rxns)
+//		{
+//			ArrayList<Frame> productsi = i.getProducts();
+//			//System.out.println(i.getLocalID()+" has "+productsi.size()+" products");
+//			for(Reaction j : rxns)
+//			{
+//				ArrayList<Frame> reactantsj = j.getReactants();
+//				//System.out.println("\t"+j.getLocalID()+" has "+reactantsj.size()+" reactants");
+//				boolean hit = false;
+//				for(Frame p : productsi)
+//				{
+//					for(Frame r : reactantsj)
+//					{
+//						if(p.getLocalID().equals(r.getLocalID()))
+//						{
+//							rst.addEdge(i,j,"");
+//							hit = true;
+//							break;
+//						}
+//					}
+//					if(hit)
+//						break;
+//				}
+//			}
+//		}
+//		//return rst;
+	}
 	
 	
 //	private void readInPalssonIDMaps(String fileName) {
