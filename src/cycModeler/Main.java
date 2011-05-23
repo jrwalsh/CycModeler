@@ -1,7 +1,13 @@
 package cycModeler;
 
 import edu.iastate.javacyco.JavacycConnection;
-import edu.iastate.javacyco.PtoolsErrorException;
+
+/**
+ * Main class for the CycModeler class.
+ * 
+ * @author Jesse Walsh
+ *
+ */
 
 public class Main {
 	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
@@ -64,7 +70,9 @@ public class Main {
 	}
 	
 	/**
-	 * @param args
+	 * Main method for the CycModeler class.  This method initializes a connection object and calls the run() method.
+	 * 
+	 * @param args Not used
 	 */
 	public static void main(String[] args) {
 		Long start = System.currentTimeMillis();
@@ -76,6 +84,9 @@ public class Main {
 		System.out.println("Runtime is " + runtime + " seconds.");
 	}
 	
+	/**
+	 * This method initializes a CycModeler object and calls its methods.  Currently used for testing.
+	 */
 	public static void run() {
 		CycModeler modeler = new CycModeler(conn);
 		modeler.sbmlInteralFunctionTests(200);
