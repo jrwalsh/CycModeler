@@ -1,0 +1,8 @@
+Unusual occurances within reactions:
+
+Reactions with non-existing metabolites 
+	RXN0-1321
+	CYTC-OX-RXN
+
+Reactions with two of the same generic metabolite on the same side
+	3.1.26.12-RXN

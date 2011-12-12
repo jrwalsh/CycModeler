@@ -12,6 +12,7 @@ import edu.iastate.javacyco.JavacycConnection;
 public class Main {
 	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
 	static public String connectionStringEcoServer =  "ecoserver.vrac.iastate.edu";
+	static public String connectionStringTHTServer =  "tht.vrac.iastate.edu";
 	static public String organismStringK12 =  "ECOLI"; //Built-in K12 model
 	static public String organismStringCBIRC =  "CBIRC"; //CBiRC E. coli model
 	static public int defaultPort =  4444;
@@ -76,8 +77,8 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(connectionStringLocal,defaultPort);
-		conn.selectOrganism(organismStringCBIRC);
+		conn = new JavacycConnection(connectionStringTHTServer,defaultPort);
+		conn.selectOrganism(organismStringK12);
 		run();
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
@@ -85,12 +86,9 @@ public class Main {
 	}
 	
 	/**
-	 * This method initializes a CycModeler object and calls its methods.  Currently used for testing.
+	 * This method initializes a CycModeler object and calls its methods.
 	 */
 	public static void run() {
 		CycModeler modeler = new CycModeler(conn);
-		modeler.sbmlInteralFunctionTests(200);
-//		modeler.sbmlInteralFunctionTests(250);
 	}
-
 }
