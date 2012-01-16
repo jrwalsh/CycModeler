@@ -1,10 +1,12 @@
 package cycModeler;
 
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 import org.sbml.libsbml.SBMLDocument;
 import org.sbml.libsbml.SBMLWriter;
 
+import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
@@ -82,8 +84,74 @@ public class Test {
 	}
 	
 	public static void test() {
-		Diffusion diffusion = new Diffusion(conn);
-		diffusion.getSmallMetabolites();
+//		Diffusion diffusion = new Diffusion(conn);
+//		diffusion.getSmallMetabolites();
+		
+		try {
+			ArrayList<String> to = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :to-compartment '"+"CCO-PERI-BAC");
+			ArrayList<String> from = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :from-compartment '"+"CCO-PERI-BAC");
+			TreeSet<String> unique = new TreeSet<String>();
+			for (String s : to) {
+				unique.add(s);
+			}
+			for (String s : from) {
+				unique.add(s);
+			}
+			try {
+				int goodcount = 0;
+				int nullcount = 0;
+				for (String s : unique) {
+					String slot = Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT");
+					if (slot != null && slot.contains("d")) {
+						slot = slot.substring(0, slot.indexOf("d")-1);
+					}
+					Float parse;
+					try {
+						parse = Float.parseFloat(slot);
+					} catch (Exception e) {
+						parse = (float) 800.0;
+					}
+					if (slot == null) {
+						nullcount++;
+//						System.err.println(nullcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+					} else if (parse < 600) {
+						goodcount++;
+						System.out.println(goodcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+					}
+				}
+				System.out.println(nullcount);
+			} catch (Exception e) {
+				
+			}
+			
+//			for (String s : unique) {
+//				System.out.println(Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+//			}
+//			System.out.println(to.size());
+//			System.out.println(from.size());
+//			System.out.println(unique.size());
+		} catch (PtoolsErrorException e) {
+			e.printStackTrace();
+		}
+			
+//		try {
+//			Frame f = Frame.load(conn, "TRANS-RXN0-234");
+//			f.print();
+//			Frame.load(conn, "F16ALDOLASE-RXN").print();
+//			
+//			System.out.println(conn.callFuncArray("compartments-of-reaction '"+"TRANS-RXN0-234"));
+//			System.out.println(conn.callFuncArray("compartments-of-reaction '"+"F16ALDOLASE-RXN"));
+//			
+//			
+//			Frame.load(conn, "RXN0-5207").print();
+//			System.out.println(conn.callFuncArray("compartments-of-reaction '"+"RXN0-5207"));
+//			
+//			
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+		
+		
 //		sbmlInteralFunctionTests(200);
 //		sbmlInteralFunctionTests(250);
 //		sbmlInteralFunctionTests(300);
@@ -101,7 +169,8 @@ public class Test {
 				reacs.add("GAP");
 				prods.add("GAP");
 				prods.add("GLC");
-				System.out.println(modeler.isReactionBalanced(reacs, prods));
+//				Balance balance = new Balance(conn);
+//				System.out.println(balance.isReactionBalanced(reacs, prods));
 			} break;
 			case 60: {
 				// Check if a pathway contains a general term
@@ -127,7 +196,8 @@ public class Test {
 			} break;
 			case 210: {
 				try {
-					System.out.println(modeler.prepareGenericReaction(modeler.loadReaction("ABC-56-RXN")).size());
+					Frame.load(conn, "G6P");
+//					System.out.println(modeler.prepareGenericReaction(modeler.loadReaction("ABC-56-RXN")).size());
 //					System.out.println(instantiateGenericReaction(loadReaction("RXN-11319")).size());
 //					System.out.println(instantiateGenericReaction(loadReaction("RXN0-1842")).size());
 //					System.out.println(instantiateGenericReaction(loadReaction("RXN0-3381")).size());
@@ -142,11 +212,11 @@ public class Test {
 				try {
 					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
 					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
-					rxn.reactants.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.defaultCompartment, 1, modeler.getChemicalFormula(modeler.loadFrame("GLC-6-P"))));
-					rxn.products.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.defaultCompartment, 1, modeler.getChemicalFormula(modeler.loadFrame("FRUCTOSE-6P"))));
+					rxn.reactants.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.defaultCompartment, 1));
+					rxn.products.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.defaultCompartment, 1));
 					rxns.add(rxn);
 					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
-					doc = modeler.generateSBMLModel(doc, rxns);
+//					doc = modeler.generateSBMLModel(doc, rxns);
 					SBMLWriter writer = new SBMLWriter();
 					writer.writeSBML(doc, modeler.OutputDirectory + "testing_SBML.xml");
 				} catch (PtoolsErrorException e) {
@@ -171,7 +241,7 @@ public class Test {
 				} catch (PtoolsErrorException e) {
 					e.printStackTrace();
 				}
-				modeler.generateSpecificReactionsFromGenericReactions(l);
+//				modeler.generateSpecificReactionsFromGenericReactions(l);
 			} break;
 		}
 	}
