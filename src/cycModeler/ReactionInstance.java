@@ -202,14 +202,10 @@ public class ReactionInstance {
 		JavacycConnection conn;
 		ArrayList<ReactionInstance> newReactions = new ArrayList<ReactionInstance>();
 		
-//		ArrayList<String> allReactantIDs = new ArrayList<String>();
-//		ArrayList<String> allProductIDs = new ArrayList<String>();
 		ArrayList<MetaboliteInstance> genericReactants = new ArrayList<MetaboliteInstance>();
 		ArrayList<MetaboliteInstance> genericProducts = new ArrayList<MetaboliteInstance>();
 		ArrayList<MetaboliteInstance> nonGenericReactantMetabolites = new ArrayList<MetaboliteInstance>();
 		ArrayList<MetaboliteInstance> nonGenericProductMetabolites = new ArrayList<MetaboliteInstance>();
-		String reactantSlot = reactionReactantSlot();
-		String productSlot = reactionProductSlot();
 		
 		try {
 			if (thisReactionFrame == null) return null;
@@ -415,8 +411,8 @@ public class ReactionInstance {
 		else if (parentReaction != null) baseID = parentReaction.getLocalID();
 		else baseID = name;
 		
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.reactionPrefix + "" + baseID);
-		else return CycModeler.convertToSBMLSafe(CycModeler.reactionPrefix + "_" + baseID);
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID);
+		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID);
 	}
 	
 	/**
@@ -494,6 +490,7 @@ public class ReactionInstance {
 		return orRule;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void generateReactantProductMetaboliteInstances() {
 		reactants = new ArrayList<MetaboliteInstance>();
 		products = new ArrayList<MetaboliteInstance>();
@@ -504,7 +501,7 @@ public class ReactionInstance {
 			for (String reactantID : reactantIDs) {
 				Frame metabolite = Frame.load(conn, reactantID);
 				String compartment = conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), reactantID, "COMPARTMENT");
-				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.defaultCompartment;
+				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
 				int coeficient = 1;
 				try {
 					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), reactantID, "COEFFICIENT"));
@@ -518,7 +515,7 @@ public class ReactionInstance {
 			for (String productID : productIDs) {
 				Frame metabolite = Frame.load(conn, productID);
 				String compartment = conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), productID, "COMPARTMENT");
-				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.defaultCompartment;
+				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
 				int coeficient = 1;
 				try {
 					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), productID, "COEFFICIENT"));

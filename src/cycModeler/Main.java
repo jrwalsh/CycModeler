@@ -76,10 +76,16 @@ public class Main {
 	 * @param args Not used
 	 */
 	public static void main(String[] args) {
+		if(args.length<1) {
+			System.out.println("Usage: Main CONFIGFILE");
+			System.exit(0);
+		}
+		String configFile = args[0];
+		
 		Long start = System.currentTimeMillis();
 		conn = new JavacycConnection(connectionStringTHTServer,defaultPort);
 		conn.selectOrganism(organismStringK12);
-		run();
+		run(configFile);
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
 		System.out.println("Runtime is " + runtime + " seconds.");
@@ -88,8 +94,8 @@ public class Main {
 	/**
 	 * This method initializes a CycModeler object and calls its methods.
 	 */
-	public static void run() {
-		CycModeler modeler = new CycModeler(conn);
+	public static void run(String configFile) {
+		CycModeler modeler = new CycModeler(conn, configFile);
 		modeler.createGenomeScaleModelFromEcoCyc();
 	}
 }

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
-import edu.iastate.javacyco.Reaction;
 
 public class ReactionNetwork {
 	private JavacycConnection conn = null;
@@ -20,7 +19,6 @@ public class ReactionNetwork {
 	private int instantiatedReactions = 0;
 	private int boundaryMetabolitesFound = 0;
 	private int boundaryReactionsAdded = 0;
-	private int totalReactions = 0;
 	
 	public ReactionNetwork (JavacycConnection connection, ArrayList<ReactionInstance> reactions) {
 		conn = connection;
@@ -213,6 +211,7 @@ public class ReactionNetwork {
 		System.out.println("Total reactions in network: " + reactions.size());
 	}
 	
+	@SuppressWarnings("unchecked")
 	public int countTransportReactions() {
 		ArrayList<String> list;
 		int transportReactionCount = 0;
