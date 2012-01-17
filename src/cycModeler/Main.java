@@ -90,6 +90,6 @@ public class Main {
 	 */
 	public static void run() {
 		CycModeler modeler = new CycModeler(conn);
-		//TODO Run model's main script
+		modeler.createGenomeScaleModelFromEcoCyc();
 	}
 }

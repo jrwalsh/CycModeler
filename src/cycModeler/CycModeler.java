@@ -123,46 +123,19 @@ public class CycModeler {
 			ArrayList<String> classToFilter = new ArrayList<String>();
 			classToFilter.add("|Polynucleotide-Reactions|");
 			classToFilter.add("|Protein-Reactions|");
-//			FilterResults filterResults = filterReactions(allReactions, classToFilter, null);
 			reactionNetwork.filterReactions(classToFilter, null);
 			
 			// 4) Find and instantiate generics
 			System.out.println("Instantiating generic reactions ...");
-//			InstantiationResults instantiationResults = generateSpecificReactionsFromGenericReactions(filterResults.keepList);
-//			ArrayList<String> reactionsToFilter = new ArrayList<String>();
-//			for (Frame reaction : instantiationResults.genericReactionsFound) reactionsToFilter.add(reaction.getLocalID());
-//			FilterResults genericReactionFilterResults = filterReactions(filterResults.keepList, null, reactionsToFilter);
 			reactionNetwork.generateSpecificReactionsFromGenericReactions();
 			
 			// 5) Add boundaries
 			System.out.println("Adding boundary reactions ...");
-//			ArrayList<ReactionInstance> reactions = reactionListToReactionInstances(genericReactionFilterResults.keepList);
-//			reactions.addAll(instantiationResults.instantiatedReactions);
-//			ArrayList<ReactionInstance> boundaryResults = 
 			reactionNetwork.addBoundaryReactionsByCompartment("CCO-OUT");
 			
 			// 6) Generate SBML model
 			System.out.println("Generating SBML model ...");
-//			reactions.addAll(boundaryResults);
-//			generateSBMLModel(doc, reactions);
 			generateSBMLModel(doc, reactionNetwork);
-			
-//			ArrayList<String> list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
-//			for (ReactionInstance reaction : reactions) {
-//				if (reaction.thisReactionFrame != null) {
-//					String s = "\tnon-transport";
-//					if (list.contains(reaction.thisReactionFrame.getLocalID())) s = "\tTransport-Reaction";
-//					System.out.println("thisReactionFrame = " + reaction.thisReactionFrame.getLocalID() + s);
-//				}
-//				else if (reaction.parentReaction != null) {
-//					String s = "\tnon-transport";
-//					if (list.contains(reaction.parentReaction.getLocalID())) s = "\tTransport-Reaction";
-//					System.out.println("parentReaction = " + reaction.parentReaction.getLocalID() + s);
-//				}
-//				else {
-//					System.out.println("name = " + reaction.name);
-//				}
-//			}
 			
 			// 7) Write revised model.
 			System.out.println("Writing output ...");
@@ -173,20 +146,8 @@ public class CycModeler {
 //			System.out.println("Writing mapping output ...");
 //			printBoundaryReactionMetaboliteList(boundaryResults, "boundaryMetabolites");
 			
-			
 			// Print statistics
-//			System.out.println("Writing statistics ...");
-//			System.out.println("All reactions : " + allReactions.size());
-//			System.out.println("Filtered reactions keeplist : " + filterResults.keepList.size());
-//			System.out.println("Filtered reactions tosslist : : " + filterResults.removedList.size());
-//			System.out.println("Generic reactions found : " + instantiationResults.genericReactionsFound.size());
-//			System.out.println("Generic reactions failed to instantiate : " + instantiationResults.genericReactionsFailedToInstantiate.size());
-//			System.out.println("New reactions from generic reaction instantiations : " + instantiationResults.instantiatedReactions.size());
-//			System.out.println("Generic keeplist : " + genericReactionFilterResults.keepList.size());
-//			System.out.println("Generic tosslist : " + genericReactionFilterResults.removedList.size());
-//			System.out.println("Boundary reactions added : " + boundaryResults.size());
-//			int grandTotal = instantiationResults.instantiatedReactions.size() + genericReactionFilterResults.keepList.size() + boundaryResults.size();
-//			System.out.println("Grand total : " + grandTotal);
+			reactionNetwork.printNetworkStatistics();
 			
 			System.out.println("Done!");
 		} catch (PtoolsErrorException e) {
@@ -484,22 +445,7 @@ public class CycModeler {
 		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
 		try {
 			for (Reaction reaction : reactions) {
-				ReactionInstance reactionInstance = new ReactionInstance(null, reaction, reaction.getCommonName(), reaction.isReversible(), new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
-				String reactionReactantSlot = reactionInstance.reactionReactantSlot();
-				for (String reactant : (ArrayList<String>)reaction.getSlotValues(reactionReactantSlot)) {
-					Frame reactantFrame = Frame.load(conn, reactant);
-					String compartment = "";
-					int stoichiometry = 0;
-					reactionInstance.reactants.add(new MetaboliteInstance(reactantFrame, compartment, stoichiometry));//generateMetabolite(reaction, reactionReactantSlot, reactantFrame, reactantFrame));
-				}
-				String reactionProductSlot = reactionInstance.reactionProductSlot();
-				for (String product : (ArrayList<String>)reaction.getSlotValues(reactionProductSlot)) {
-					Frame productFrame = Frame.load(conn, product);
-					String compartment = "";
-					int stoichiometry = 0;
-					reactionInstance.products.add(new MetaboliteInstance(productFrame, compartment, stoichiometry));//generateMetabolite(reaction, reactionProductSlot, productFrame, productFrame));
-				}
-				
+				ReactionInstance reactionInstance = new ReactionInstance(null, reaction, reaction.getCommonName(), reaction.isReversible());
 				reactionInstances.add(reactionInstance);
 			}
 		} catch (PtoolsErrorException e) {

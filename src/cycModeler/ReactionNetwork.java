@@ -10,10 +10,23 @@ import edu.iastate.javacyco.Reaction;
 public class ReactionNetwork {
 	private JavacycConnection conn = null;
 	ArrayList<ReactionInstance> reactions;
+
+	// Network modification statistics
+	private boolean debug = true;
+	private int totalStartingReactions = 0;
+	private int filteredReactions = 0;
+	private int genericReactionsFound = 0;
+	private int genericReactionsInstantiated = 0;
+	private int instantiatedReactions = 0;
+	private int boundaryMetabolitesFound = 0;
+	private int boundaryReactionsAdded = 0;
+	private int totalReactions = 0;
 	
 	public ReactionNetwork (JavacycConnection connection, ArrayList<ReactionInstance> reactions) {
 		conn = connection;
 		this.reactions = reactions;
+		
+		if (debug) totalStartingReactions += reactions.size();
 	}
 	
 	/**
@@ -60,6 +73,10 @@ public class ReactionNetwork {
 		}
 		
 		reactions.addAll(exchangeReactions);
+		if (debug) {
+			boundaryMetabolitesFound += exchangeMetabolites.size();
+			boundaryReactionsAdded += exchangeReactions.size();
+		}
 		
 		return exchangeReactions;
 	}
@@ -139,6 +156,7 @@ public class ReactionNetwork {
 		}
 		
 		reactions = keepList;
+		if (debug) filteredReactions += keepList.size();
 		
 		return new FilterResults(keepList, removedList);
 	}
@@ -160,7 +178,7 @@ public class ReactionNetwork {
 		for (ReactionInstance reaction : reactions) {
 			if (reaction.isGeneralizedReaction(conn)) {
 				instantiationResults.genericReactionsFound.add(reaction);
-				ArrayList<ReactionInstance> instantiatedReactions = reaction.generateInstantiatedReactions(conn);
+				ArrayList<ReactionInstance> instantiatedReactions = reaction.generateInstantiatedReactions();
 				if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
 					instantiationResults.instantiatedReactions.addAll(instantiatedReactions);
 				} else {
@@ -173,8 +191,45 @@ public class ReactionNetwork {
 		
 		reactions = instantiationResults.nonGenericReaction;
 		reactions.addAll(instantiationResults.instantiatedReactions);
+		if (debug) {
+			genericReactionsFound += instantiationResults.genericReactionsFound.size();
+			genericReactionsInstantiated += instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size();
+			instantiatedReactions += instantiationResults.instantiatedReactions.size();
+		}
 		
 		return instantiationResults;
+	}
+	
+	public void printNetworkStatistics() {
+		System.out.println("Writing statistics ...");
+		System.out.println("All reactions : " + totalStartingReactions);
+		System.out.println("Removed reactions due to filtering : " + filteredReactions);
+		System.out.println("Generic reactions found : " + genericReactionsFound);
+		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated);
+		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions);
+		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound);
+		System.out.println("Exchange reactions added : " + boundaryReactionsAdded);
+		System.out.println("Total transport reactions in network (excluding exchange and diffusion): " + countTransportReactions());
+		System.out.println("Total reactions in network: " + reactions.size());
+	}
+	
+	public int countTransportReactions() {
+		ArrayList<String> list;
+		int transportReactionCount = 0;
+		try {
+			list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
+			for (ReactionInstance reaction : reactions) {
+				if (reaction.thisReactionFrame != null) {
+					if (list.contains(reaction.thisReactionFrame.getLocalID())) transportReactionCount++;
+				}
+				else if (reaction.parentReaction != null) {
+					if (list.contains(reaction.parentReaction.getLocalID())) transportReactionCount++;
+				}
+			}
+		} catch (PtoolsErrorException e) {
+			e.printStackTrace();
+		}
+		return transportReactionCount;
 	}
 	
 	

@@ -32,35 +32,35 @@ public class MetaboliteInstance {
 		this.chemicalFormula = getChemicalFormula();
 	}
 	
-	/**
-	 * Intended for instantiating generic reactions. Creates a Metabolite object within the context of a reaction and another metabolite.
-	 * Typical usage would be to provide a generic reaction, a class metabolite for that generic reaction, and an instance of the class
-	 * metabolite. The result would be a Metabolite object borrowing the compartment and coefficient information from the original
-	 * reaction-metabolite pair.
-	 * 
-	 * @param origReaction Original reaction, which combined with origMetabolite provides compartment and coefficient information for
-	 * the resulting MetaboliteInstance object
-	 * @param slot Slot of origReaction containing the origMetabolite (Usually either "RIGHT" or "LEFT")
-	 * @param origMetabolite Original metabolite, which combined with origReaction provides compartment and coefficient information for
-	 * the resulting Metabolite object
-	 * @param newMetabolite Metabolite frame on which the resulting MetaboliteInstance object will be based
-	 */
-	public MetaboliteInstance(JavacycConnection conn, Reaction origReaction, String slot, Frame origMetabolite, Frame newMetabolite) throws PtoolsErrorException {
-		String compartment = conn.getValueAnnot(origReaction.getLocalID(), slot, origMetabolite.getLocalID(), "COMPARTMENT");
-		if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.defaultCompartment;
-		
-		int coeficient = 1;
-		try {
-			coeficient = Integer.parseInt(conn.getValueAnnot(origReaction.getLocalID(), slot, origMetabolite.getLocalID(), "COEFFICIENT"));
-		} catch (Exception e) {
-			coeficient = 1;
-		}
-		
-		this.metabolite = newMetabolite;
-		this.compartment = compartment;
-		this.stoichiometry = coeficient;
-		this.chemicalFormula = getChemicalFormula();
-	}
+//	/**
+//	 * Intended for instantiating generic reactions. Creates a Metabolite object within the context of a reaction and another metabolite.
+//	 * Typical usage would be to provide a generic reaction, a class metabolite for that generic reaction, and an instance of the class
+//	 * metabolite. The result would be a Metabolite object borrowing the compartment and coefficient information from the original
+//	 * reaction-metabolite pair.
+//	 * 
+//	 * @param origReaction Original reaction, which combined with origMetabolite provides compartment and coefficient information for
+//	 * the resulting MetaboliteInstance object
+//	 * @param slot Slot of origReaction containing the origMetabolite (Usually either "RIGHT" or "LEFT")
+//	 * @param origMetabolite Original metabolite, which combined with origReaction provides compartment and coefficient information for
+//	 * the resulting Metabolite object
+//	 * @param newMetabolite Metabolite frame on which the resulting MetaboliteInstance object will be based
+//	 */
+//	public MetaboliteInstance(JavacycConnection conn, Reaction origReaction, String slot, Frame origMetabolite, Frame newMetabolite) throws PtoolsErrorException {
+//		String compartment = conn.getValueAnnot(origReaction.getLocalID(), slot, origMetabolite.getLocalID(), "COMPARTMENT");
+//		if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.defaultCompartment;
+//		
+//		int coeficient = 1;
+//		try {
+//			coeficient = Integer.parseInt(conn.getValueAnnot(origReaction.getLocalID(), slot, origMetabolite.getLocalID(), "COEFFICIENT"));
+//		} catch (Exception e) {
+//			coeficient = 1;
+//		}
+//		
+//		this.metabolite = newMetabolite;
+//		this.compartment = compartment;
+//		this.stoichiometry = coeficient;
+//		this.chemicalFormula = getChemicalFormula();
+//	}
 	
 	/**
 	 * Gets the chemical formula from EcoCyc of given compound. Intended for use as a display string, not for elemental balancing.
