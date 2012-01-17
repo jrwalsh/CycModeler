@@ -3,9 +3,7 @@ package cycModeler;
 import java.util.ArrayList;
 
 import edu.iastate.javacyco.Frame;
-import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
-import edu.iastate.javacyco.Reaction;
 
 /**
  * Represents metabolites in context of a specific reaction.
@@ -121,7 +119,7 @@ public class MetaboliteInstance {
 	private String getKeggID() {
 		String keggID = "";
 		try {
-			ArrayList dblinks = null;
+			ArrayList<String> dblinks = null;
 			if (metabolite.hasSlot("DBLINKS")) dblinks = metabolite.getSlotValues("DBLINKS");
 			for (Object dblink : dblinks) {
 				ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
@@ -147,7 +145,7 @@ public class MetaboliteInstance {
 	 */
 	protected String generateSpeciesID() {
 		String baseID = metabolite.getLocalID();
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.speciesPrefix + "" + baseID + "_" + CycModeler.compartmentAbrevs.get(compartment));
-		else return CycModeler.convertToSBMLSafe(CycModeler.speciesPrefix + "_" + baseID + "_" + CycModeler.compartmentAbrevs.get(compartment));
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment));
+		else return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "_" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment));
 	}
 }

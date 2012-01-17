@@ -8,9 +8,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.sbml.libsbml.*;
 
@@ -32,12 +29,12 @@ import edu.iastate.javacyco.*;
 public class CycModeler {
 	static protected JavacycConnection conn = null;
 	static protected String OutputDirectory = "";
-	static protected String defaultCompartment = "CCO-CYTOSOL";
+	static protected String DefaultCompartment = "CCO-CYTOSOL";
 	static protected int DefaultSBMLLevel = 2;
 	static protected int DefaultSBMLVersion = 1;
-	static protected HashMap<String, String> compartmentAbrevs = new HashMap<String, String>();
-	static protected String speciesPrefix = "M";
-	static protected String reactionPrefix = "R";
+	static protected HashMap<String, String> CompartmentAbrevs = new HashMap<String, String>();
+	static protected String SpeciesPrefix = "M";
+	static protected String ReactionPrefix = "R";
 	static protected String BoundaryCompartmentName = "Boundary";
 	static protected String ExchangeReactionSuffix = "exchange";
 	static protected String ModelName = "DefaultName";
@@ -48,7 +45,7 @@ public class CycModeler {
 	 * @param port Port that JavaCycO is listening on
 	 * @param organism Organism to connect to (i.e., selects which database to connect to)
 	 */
-	public CycModeler (String connectionString, int port, String organism) {
+	public CycModeler (String connectionString, int port, String organism, String configFile) {
 		String CurrentConnectionString = connectionString;
 		int CurrentPort = port;
 		String CurrentOrganism = organism;
@@ -56,7 +53,8 @@ public class CycModeler {
 		conn = new JavacycConnection(CurrentConnectionString,CurrentPort);
 		conn.selectOrganism(CurrentOrganism);
 		
-		setDefaults();
+//		setDefaultSettings();
+		getConfigFile(configFile);
 	}
 	
 	
@@ -65,40 +63,143 @@ public class CycModeler {
 	 * Does not set an organism for the JavacycConnection object.  Expects that the connection object has already selected an organism.
 	 * @param connection Initialized connection object
 	 */
-	public CycModeler (JavacycConnection connection) {
+	public CycModeler (JavacycConnection connection, String configFile) {
 		conn = connection;
-		setDefaults();
+//		setDefaultSettings();
+		getConfigFile(configFile);
 	}
 	
 
 	// Methods
+	public void getConfigFile(String fileName) {
+		String outputDirectory = null;
+		String defaultCompartment = null;
+		int defaultSBMLLevel = 0;
+		int defaultSBMLVersion = 0;
+		String modelName = null;
+		String boundaryCompartmentName = null;
+		String exchangeReactionSuffix = null;
+		String speciesPrefix = null;
+		String reactionPrefix = null;
+		HashMap<String, String> compartmentAbrevs = new HashMap<String, String>();
+		
+		
+		File configFile = new File(fileName);
+		BufferedReader reader = null;
+		
+		try {
+			reader = new BufferedReader(new FileReader(configFile));
+			String text = null;
+			
+			while ((text = reader.readLine()) != null) {
+				String command = text.substring(0, text.indexOf(" "));
+				String value = text.substring(text.indexOf(" ")+1);
+				
+				switch (Setting.value(command)) {
+					case OUTPUTDIRECTORY: outputDirectory = value; break;
+					case DEFAULTCOMPARTMENT: defaultCompartment = value; break;
+					case DEFAULTSBMLLEVEL: defaultSBMLLevel = Integer.parseInt(value); break;
+					case DEFAULTSBMLVERSION: defaultSBMLVersion = Integer.parseInt(value); break;
+					case MODELNAME: modelName = value; break;
+					case BOUNDARYCOMPARTMENTNAME: boundaryCompartmentName = value; break;
+					case EXCHANGEREACTIONSUFFIX: exchangeReactionSuffix = value; break;
+					case SPECIESPREFIX: speciesPrefix = value; break;
+					case REACTIONPREFIX: reactionPrefix = value; break;
+					case COMPARTMENTABREVS: {
+						String[] values = value.split(";");
+						for (String compartmentAbrevPair : values) {
+							String[] pair = compartmentAbrevPair.split(",");
+							compartmentAbrevs.put(pair[0], pair[1]);
+						}
+					} break;
+					default: {
+						
+					} break;
+				}
+			}
+			
+			assert outputDirectory != null;
+			assert defaultCompartment != null;
+			assert defaultSBMLLevel != 0;
+			assert defaultSBMLVersion != 0;
+			assert modelName != null;
+			assert boundaryCompartmentName != null;
+			assert exchangeReactionSuffix != null;
+			assert speciesPrefix != null;
+			assert reactionPrefix != null;
+			assert compartmentAbrevs.size() != 0;
+			
+			setSettings(outputDirectory, defaultCompartment, defaultSBMLLevel, defaultSBMLVersion, modelName, boundaryCompartmentName, exchangeReactionSuffix, speciesPrefix, reactionPrefix, compartmentAbrevs);
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				if (reader != null) {
+					reader.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	/**
 	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
 	 * in the SBML models.
 	 */
-	public void setDefaults() {
+	public void setDefaultSettings() {
 		OutputDirectory = "/home/jesse/Desktop/output/";
-		defaultCompartment = "CCO-CYTOSOL";
+		DefaultCompartment = "CCO-CYTOSOL";
 		DefaultSBMLLevel = 2;
 		DefaultSBMLVersion = 1;
 		ModelName = "CBiRC";
 		
 		BoundaryCompartmentName = "Boundary";
-		ExchangeReactionSuffix = "exchange";
+		ExchangeReactionSuffix = "Exchange";
 		
-		speciesPrefix = "M";
-		reactionPrefix = "R";
+		SpeciesPrefix = "M";
+		ReactionPrefix = "R";
 		
-		compartmentAbrevs.put("CCO-CYTOSOL", "c");
-		compartmentAbrevs.put("CCO-PERI-BAC", "periBac");
-		compartmentAbrevs.put("CCO-PERIPLASM", "p");
-		compartmentAbrevs.put("CCO-EXTRACELLULAR", "e");
-		compartmentAbrevs.put("CCO-CYTOPLASM", "cp");
-		compartmentAbrevs.put("CCO-UNKNOWN-SPACE", "unk");
-		compartmentAbrevs.put("CCO-IN", "i");
-		compartmentAbrevs.put("CCO-OUT", "o");
-		compartmentAbrevs.put("CCO-MIDDLE", "m");
-		compartmentAbrevs.put("Boundary", "b");
+		CompartmentAbrevs.put("CCO-CYTOSOL", "c");
+		CompartmentAbrevs.put("CCO-PERI-BAC", "periBac");
+		CompartmentAbrevs.put("CCO-PERIPLASM", "p");
+		CompartmentAbrevs.put("CCO-EXTRACELLULAR", "e");
+		CompartmentAbrevs.put("CCO-CYTOPLASM", "cp");
+		CompartmentAbrevs.put("CCO-UNKNOWN-SPACE", "unk");
+		CompartmentAbrevs.put("CCO-IN", "i");
+		CompartmentAbrevs.put("CCO-OUT", "o");
+		CompartmentAbrevs.put("CCO-MIDDLE", "m");
+		CompartmentAbrevs.put("Boundary", "b");
+	}
+	
+	/**
+	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
+	 * in the SBML models.
+	 */
+	public void setSettings(String outputDirectory, String defaultCompartment, int defaultSBMLLevel, int defaultSBMLVersion, String modelName, String boundaryCompartmentName, String exchangeReactionSuffix, String speciesPrefix, String reactionPrefix, HashMap<String, String> compartmentAbrevs) {
+		OutputDirectory = outputDirectory;
+		DefaultCompartment = defaultCompartment;
+		DefaultSBMLLevel = defaultSBMLLevel;
+		DefaultSBMLVersion = defaultSBMLVersion;
+		ModelName = modelName;
+		
+		BoundaryCompartmentName = boundaryCompartmentName;
+		ExchangeReactionSuffix = exchangeReactionSuffix;
+		
+		SpeciesPrefix = speciesPrefix;
+		ReactionPrefix = reactionPrefix;
+		
+		CompartmentAbrevs = compartmentAbrevs;
 	}
 	
 	/**
@@ -440,7 +541,6 @@ public class CycModeler {
 	 * @param reactions ArrayList of Reaction objects
 	 * @return ArrayList of ReactionInstance objects
 	 */
-	@SuppressWarnings("unchecked")
 	private ArrayList<ReactionInstance> reactionListToReactionInstances(ArrayList<Reaction> reactions) {
 		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
 		try {
@@ -482,7 +582,6 @@ public class CycModeler {
 	 * @param reactionName
 	 * @return True if reaction is generic.
 	 */
-	@SuppressWarnings("unchecked")
 	protected boolean isGeneralizedReaction(String reactionName) {
 		boolean result = false;
 		try {
@@ -675,5 +774,28 @@ public class CycModeler {
 		}
 		
 		printString(OutputDirectory + fileName, outString);
+	}
+	
+	// Internal Classes
+	public enum Setting	{
+		OUTPUTDIRECTORY,
+		DEFAULTCOMPARTMENT,
+		DEFAULTSBMLLEVEL,
+		DEFAULTSBMLVERSION,
+		MODELNAME,
+		BOUNDARYCOMPARTMENTNAME,
+		EXCHANGEREACTIONSUFFIX,
+		SPECIESPREFIX,
+		REACTIONPREFIX,
+		COMPARTMENTABREVS,
+	    NOVALUE;
+
+	    public static Setting value(String setting) {
+	        try {
+	            return valueOf(setting.toUpperCase());
+	        } catch (Exception e) {
+	            return NOVALUE;
+	        }
+	    }   
 	}
 }

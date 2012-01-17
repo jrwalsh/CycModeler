@@ -159,7 +159,7 @@ public class Test {
 	
 	// Testing
 	public static void sbmlInteralFunctionTests(int mode) {
-		CycModeler modeler = new CycModeler(conn);
+		CycModeler modeler = new CycModeler(conn, "");
 		switch (mode) {
 			case 40: {
 				// Check behavior of the isReactionBalanced function
@@ -212,8 +212,8 @@ public class Test {
 				try {
 					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
 					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
-					rxn.reactants.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.defaultCompartment, 1));
-					rxn.products.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.defaultCompartment, 1));
+					rxn.reactants.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.DefaultCompartment, 1));
+					rxn.products.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.DefaultCompartment, 1));
 					rxns.add(rxn);
 					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
 //					doc = modeler.generateSBMLModel(doc, rxns);
