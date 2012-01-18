@@ -11,48 +11,42 @@ import edu.iastate.javacyco.Reaction;
 /**
  * Represents a reaction in the reaction network of a model.
  * 
- * @author Jesse
+ * @author Jesse Walsh
  */
 public class ReactionInstance {
-	public Reaction parentReaction;
-	public Reaction thisReactionFrame;
-	public String name;
-	public boolean reversible;
-	public ArrayList<MetaboliteInstance> reactants;
-	public ArrayList<MetaboliteInstance> products;
-	public String reactantSlot = ""; //TODO
-	public String productSlot = ""; //TODO
+	public Reaction parentReaction_;
+	public Reaction thisReactionFrame_;
+	public String name_;
+	public boolean reversible_;
+	public ArrayList<MetaboliteInstance> reactants_;
+	public ArrayList<MetaboliteInstance> products_;
+	public String reactantSlot_;
+	public String productSlot_;
 	
 	
 	public ReactionInstance(Reaction thisReactionFrame) {
-		this.thisReactionFrame = thisReactionFrame;
-	}
-	
-	/**
-	 * 
-	 * @param parentReactionFrame
-	 * @param thisReactionFrame
-	 * @param name
-	 * @param reversible
-	 * @param reactants
-	 * @param products
-	 */
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
-		this.parentReaction = parentReactionFrame;
-		this.thisReactionFrame = thisReactionFrame;
-		this.name = name;
-		this.reversible = reversible;
-		this.reactants = reactants;
-		this.products = products;
+		thisReactionFrame_ = thisReactionFrame;
 	}
 	
 	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible) {
-		this.parentReaction = parentReactionFrame;
-		this.thisReactionFrame = thisReactionFrame;
-		this.name = name;
-		this.reversible = reversible;
-		generateReactantProductMetaboliteInstances();
+		parentReaction_ = parentReactionFrame;
+		thisReactionFrame_ = thisReactionFrame;
+		name_ = name;
+		reversible_ = reversible;
+		initializeReactantProductSlotVariables();
+		initializeReactantProductMetaboliteInstances();
 	}
+	
+	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
+		parentReaction_ = parentReactionFrame;
+		thisReactionFrame_ = thisReactionFrame;
+		name_ = name;
+		reversible_ = reversible;
+		reactants_ = reactants;
+		products_ = products;
+		initializeReactantProductSlotVariables();
+	}
+
 	
 	/**
 	 * Test if a reaction is balanced by adding up each element on the reactant side and each element on the product side and
@@ -70,29 +64,29 @@ public class ReactionInstance {
 		HashMap<String, Integer> reactantElements = new HashMap<String, Integer>();
 		HashMap<String, Integer> productElements = new HashMap<String, Integer>();
 		try {
-			for (MetaboliteInstance reactant : reactants) {
+			for (MetaboliteInstance reactant : reactants_) {
 				// Special Case
 				int specialCases = 0;
-				if (reactant.metabolite.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-				else if (reactant.metabolite.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
+				if (reactant.metabolite_.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
+				else if (reactant.metabolite_.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
 				switch (specialCases) {
 					case 1: {
 						if (reactantElements.containsKey("A")) {
-							reactantElements.put("A", reactantElements.get("A") + (1*reactant.stoichiometry));
+							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
 						} else {
-							reactantElements.put("A", (1*reactant.stoichiometry));
+							reactantElements.put("A", (1*reactant.coefficient_));
 						}
 					} break;
 					case 2: {
 						if (reactantElements.containsKey("A")) {
-							reactantElements.put("A", reactantElements.get("A") + (1*reactant.stoichiometry));
+							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
 						} else {
-							reactantElements.put("A", (1*reactant.stoichiometry));
+							reactantElements.put("A", (1*reactant.coefficient_));
 						}
 						if (reactantElements.containsKey("H")) {
-							reactantElements.put("H", reactantElements.get("H") + (2*reactant.stoichiometry));
+							reactantElements.put("H", reactantElements.get("H") + (2*reactant.coefficient_));
 						} else {
-							reactantElements.put("H", (2*reactant.stoichiometry));
+							reactantElements.put("H", (2*reactant.coefficient_));
 						}
 					} break;
 				}
@@ -101,43 +95,43 @@ public class ReactionInstance {
 				}
 				
 				// Regular Case
-				for (Object o : reactant.metabolite.getSlotValues("CHEMICAL-FORMULA")) {
+				for (Object o : reactant.metabolite_.getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
 					Integer quantity = Integer.parseInt(chemicalFormulaElement.split(",")[1]);
 					
 					//Add to map
 					if (reactantElements.containsKey(element)) {
-						reactantElements.put(element, reactantElements.get(element) + (quantity*reactant.stoichiometry));
+						reactantElements.put(element, reactantElements.get(element) + (quantity*reactant.coefficient_));
 					} else {
-						reactantElements.put(element, (quantity*reactant.stoichiometry));
+						reactantElements.put(element, (quantity*reactant.coefficient_));
 					}
 				}
 			}
 			
-			for (MetaboliteInstance product : products) {
+			for (MetaboliteInstance product : products_) {
 				// Special Case
 				int specialCases = 0;
-				if (product.metabolite.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-				else if (product.metabolite.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
+				if (product.metabolite_.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
+				else if (product.metabolite_.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
 				switch (specialCases) {
 					case 1: {
 						if (productElements.containsKey("A")) {
-							productElements.put("A", productElements.get("A") + (1*product.stoichiometry));
+							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
 						} else {
-							productElements.put("A", (1*product.stoichiometry));
+							productElements.put("A", (1*product.coefficient_));
 						}
 					} break;
 					case 2: {
 						if (productElements.containsKey("A")) {
-							productElements.put("A", productElements.get("A") + (1*product.stoichiometry));
+							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
 						} else {
-							productElements.put("A", (1*product.stoichiometry));
+							productElements.put("A", (1*product.coefficient_));
 						}
 						if (productElements.containsKey("H")) {
-							productElements.put("H", productElements.get("H") + (2*product.stoichiometry));
+							productElements.put("H", productElements.get("H") + (2*product.coefficient_));
 						} else {
-							productElements.put("H", (1*product.stoichiometry));
+							productElements.put("H", (1*product.coefficient_));
 						}
 					} break;
 				}
@@ -146,16 +140,16 @@ public class ReactionInstance {
 				}
 				
 				// Regular Case
-				for (Object o : product.metabolite.getSlotValues("CHEMICAL-FORMULA")) {
+				for (Object o : product.metabolite_.getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
 					Integer quantity = Integer.parseInt(chemicalFormulaElement.split(",")[1]);
 					
 					//Add to map
 					if (productElements.containsKey(element)) {
-						productElements.put(element, productElements.get(element) + (quantity*product.stoichiometry));
+						productElements.put(element, productElements.get(element) + (quantity*product.coefficient_));
 					} else {
-						productElements.put(element, (quantity*product.stoichiometry));
+						productElements.put(element, (quantity*product.coefficient_));
 					}
 				}
 			}
@@ -184,18 +178,11 @@ public class ReactionInstance {
 	 * generating every combination of these instances possible. Only metabolite combinations that result in reactions that are
 	 * elementally balanced are included in the results.
 	 * 
-	 * Note: Generation of instances of metabolite classes depends on the existance of this information in EcoCyc. It is known that
+	 * Note: Generation of instances of metabolite classes depends on the existence of this information in EcoCyc. It is known that
 	 * this information is currently incomplete, resulting in reactions that should exist but aren't included here. Also, reactions
 	 * have been found that should occur but do not pass the elemental balancing step due to missing proton/water molecules. This 
 	 * issue is currently left up to manual review.
 	 * 
-	 * @param origReaction Generic reaction being instantiated
-	 * @param reactants Non-generic reactant metabolites
-	 * @param products Non-generic product metabolites
-	 * @param genericReactants Generic reactant metabolites
-	 * @param genericProducts Generic product metabolites
-	 * @param reactantSlot Slot name which holds reactants (Usually "RIGHT" or "LEFT" depending on reaction direction)
-	 * @param productSlot Slot name which holds products (Usually "RIGHT" or "LEFT" depending on reaction direction)
 	 * @return List of newly created, elementally balanced reaction instances
 	 */
 	protected ArrayList<ReactionInstance> generateInstantiatedReactions() {
@@ -208,26 +195,23 @@ public class ReactionInstance {
 		ArrayList<MetaboliteInstance> nonGenericProductMetabolites = new ArrayList<MetaboliteInstance>();
 		
 		try {
-			if (thisReactionFrame == null) return null;
+			if (thisReactionFrame_ == null) return null;
 			
-			conn = thisReactionFrame.getConnection();
+			conn = thisReactionFrame_.getConnection();
 			
 			// If reaction has specific forms, then assume those forms are already in the model
-			if (conn.specificFormsOfReaction(thisReactionFrame.getLocalID()).size() > 0) return null;//TODO
+			if (conn.specificFormsOfReaction(thisReactionFrame_.getLocalID()).size() > 0) return null;//TODO
 			
 			// If reaction cannot be balanced then it cannot be instantiated
-			if (thisReactionFrame.hasSlot("CANNOT-BALANCE?") && thisReactionFrame.getSlotValue("CANNOT-BALANCE?") != null) return null;
+			if (thisReactionFrame_.hasSlot("CANNOT-BALANCE?") && thisReactionFrame_.getSlotValue("CANNOT-BALANCE?") != null) return null;
 			
-			// Get reactants and products.  Must account for direction of reaction.
-//			allReactantIDs = thisReactionFrame.getSlotValues(reactantSlot);
-//			allProductIDs = thisReactionFrame.getSlotValues(productSlot);
-			
-			for (MetaboliteInstance reactant : reactants) {
-				if (conn.getFrameType(reactant.metabolite.getLocalID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
+			// Sort generic from non-generic reactants and products.
+			for (MetaboliteInstance reactant : reactants_) {
+				if (conn.getFrameType(reactant.metabolite_.getLocalID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
 				else nonGenericReactantMetabolites.add(reactant);
 			}
-			for (MetaboliteInstance product : products) {
-				if (conn.getFrameType(product.metabolite.getLocalID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
+			for (MetaboliteInstance product : products_) {
+				if (conn.getFrameType(product.metabolite_.getLocalID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
 				else nonGenericProductMetabolites.add(product);
 			}
 			
@@ -239,18 +223,18 @@ public class ReactionInstance {
 				// Generate all possible combinations of instances for the generic terms
 				ArrayList<NamedList> listSet = new ArrayList<NamedList>();
 				for (MetaboliteInstance genericTerm : genericReactants) {
-					ArrayList<String> instancesOfGeneralTerm = new ArrayList<String>();
-					for (Object instance : conn.getClassAllInstances(genericTerm.metabolite.getLocalID())) instancesOfGeneralTerm.add(instance.toString());
-					if (instancesOfGeneralTerm.size() == 0) instancesOfGeneralTerm.add(genericTerm.metabolite.getLocalID());
-					NamedList namedList = new NamedList(genericTerm.metabolite.getLocalID(), instancesOfGeneralTerm);
+					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
+					for (Object instance : conn.getClassAllInstances(genericTerm.metabolite_.getLocalID())) instancesOfGenericTerm.add(instance.toString());
+					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.metabolite_.getLocalID());
+					NamedList namedList = new NamedList(genericTerm.metabolite_.getLocalID(), instancesOfGenericTerm);
 					if (!listSet.contains(namedList)) listSet.add(namedList);
 				}
 				
 				for (MetaboliteInstance genericTerm : genericProducts) {
-					ArrayList<String> instancesOfGeneralTerm = new ArrayList<String>();
-					for (Object instance : conn.getClassAllInstances(genericTerm.metabolite.getLocalID())) instancesOfGeneralTerm.add(instance.toString());
-					if (instancesOfGeneralTerm.size() == 0) instancesOfGeneralTerm.add(genericTerm.metabolite.getLocalID());
-					NamedList namedList = new NamedList(genericTerm.metabolite.getLocalID(), instancesOfGeneralTerm);
+					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
+					for (Object instance : conn.getClassAllInstances(genericTerm.metabolite_.getLocalID())) instancesOfGenericTerm.add(instance.toString());
+					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.metabolite_.getLocalID());
+					NamedList namedList = new NamedList(genericTerm.metabolite_.getLocalID(), instancesOfGenericTerm);
 					if (!listSet.contains(namedList)) listSet.add(namedList);
 				}
 				
@@ -258,37 +242,37 @@ public class ReactionInstance {
 				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
-					ReactionInstance newReaction = new ReactionInstance(thisReactionFrame, null, "", thisReactionFrame.isReversible(), new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
+					ReactionInstance newReaction = new ReactionInstance(thisReactionFrame_, null, "", thisReactionFrame_.isReversible(), new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
 					
 					// Non-generic metabolites
 					for (MetaboliteInstance reactant : nonGenericReactantMetabolites) {
-						newReaction.reactants.add(new MetaboliteInstance(reactant.metabolite, reactant.compartment, reactant.stoichiometry));
+						newReaction.reactants_.add(new MetaboliteInstance(reactant.metabolite_, reactant.compartment_, reactant.coefficient_));
 					}
 					for (MetaboliteInstance product : nonGenericProductMetabolites) {
-						newReaction.products.add(new MetaboliteInstance(product.metabolite, product.compartment, product.stoichiometry));
+						newReaction.products_.add(new MetaboliteInstance(product.metabolite_, product.compartment_, product.coefficient_));
 					}
 
 					// Generic metabolites -- Create a new MetaboliteInstance by replacing the old generic metabolite frame object with the new metabolite frame while keeping the compartment and stoichiometry the same 
 					for (MetaboliteInstance genericReactant : genericReactants) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.metabolite.getLocalID())));
-						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericReactant.compartment, genericReactant.stoichiometry);
-						newReaction.reactants.add(newMetabolite);
+						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.metabolite_.getLocalID())));
+						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericReactant.compartment_, genericReactant.coefficient_);
+						newReaction.reactants_.add(newMetabolite);
 					}
 					for (MetaboliteInstance genericProduct : genericProducts) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.metabolite.getLocalID())));
-						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericProduct.compartment, genericProduct.stoichiometry);
-						newReaction.products.add(newMetabolite);
+						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.metabolite_.getLocalID())));
+						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericProduct.compartment_, genericProduct.coefficient_);
+						newReaction.products_.add(newMetabolite);
 					}
-					
-					// We need unique names for the newly instantiated reactions. Append the names of the instantiated metabolites to the reaction name.
-					String nameModifier = "";
-					for (String term : combinationSet) nameModifier += term + "_";
-					if (nameModifier.endsWith("_")) nameModifier = nameModifier.substring(0, nameModifier.length()-1);
 					
 					// If the chosen metabolite instances result in this new reaction having a balanced elemental equation, include it in the new
 					// reactionInstances to be returned.
 					if (newReaction.isReactionBalanced()) {
-						newReaction.name = newReaction.parentReaction.getCommonName() + nameModifier;
+						// We need unique names for the newly instantiated reactions. Append the names of the instantiated metabolites to the reaction name.
+						String nameModifier = "";
+						for (String term : combinationSet) nameModifier += term + "_";
+						if (nameModifier.endsWith("_")) nameModifier = nameModifier.substring(0, nameModifier.length()-1);
+								
+						newReaction.name_ = newReaction.parentReaction_.getCommonName() + nameModifier;
 						newReactions.add(newReaction);
 					}
 				}
@@ -309,7 +293,7 @@ public class ReactionInstance {
 	 * This function takes in a list of lists and returns every possible combination of 1 item from each sublist.
 	 * Thus, if the lists [1,2,3], [4,5,6], and [7,8,9] were input, then the output would be
 	 * [1,4,7], [1,4,8], [1,4,8], [1,5,7], [1,5,8], [1,5,9] ...
-	 * This method was written as a way to instantiate general terms in a reaction. Each general term in a reaction has 
+	 * This method was written as a way to instantiate generic terms in a reaction. Each generic term in a reaction has 
 	 * a list of possible values, and every possible combination of terms is needed.
 	 * 
 	 * @param listOfNamedLists List of NamedList objects. Name of list should be the class metabolite, while the list is
@@ -350,66 +334,38 @@ public class ReactionInstance {
 	}
 	
 	/**
-	 * Get slot name of Reaction reactants depending on reaction direction. Reversible reactions report reactant slot as "LEFT".
-	 * 
-	 * @param reaction
-	 * @return
-	 * @throws PtoolsErrorException
+	 * Get slot name of Reaction reactants and products depending on reaction direction. Reversible reactions report reactant slot as "LEFT".
+	 * Only in the case of reaction-direction given as "RIGHT-TO-LEFT" do we switch the reactant/product slots.
 	 */
-	protected String reactionReactantSlot() {
+	protected void initializeReactantProductSlotVariables() {
 		Reaction reaction = null;
-		if (thisReactionFrame != null) reaction = thisReactionFrame;
-		else if (parentReaction != null) reaction = parentReaction;
-		else return null;
+		if (thisReactionFrame_ != null) reaction = thisReactionFrame_;
+		else if (parentReaction_ != null) reaction = parentReaction_;
 		
 		try {
+			assert reaction != null;
+			
 			if (reaction.getSlotValue("REACTION-DIRECTION") == null || !reaction.getSlotValue("REACTION-DIRECTION").equalsIgnoreCase("RIGHT-TO-LEFT")) {
-				return "LEFT";
+				reactantSlot_ = "LEFT";
+				productSlot_ = "RIGHT";
 			} else {
-				return "RIGHT";
+				reactantSlot_ = "RIGHT";
+				productSlot_ = "LEFT";
 			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	/**
-	 * Get slot name of Reaction products depending on reaction direction. Reversible reactions report product slot as "RIGHT".
-	 * 
-	 * @param reaction
-	 * @return
-	 * @throws PtoolsErrorException
-	 */
-	protected String reactionProductSlot() {
-		Reaction reaction = null;
-		if (thisReactionFrame != null) reaction = thisReactionFrame;
-		else if (parentReaction != null) reaction = parentReaction;
-		else return null;
-		
-		try {
-			if (reaction.getSlotValue("REACTION-DIRECTION") == null || !reaction.getSlotValue("REACTION-DIRECTION").equalsIgnoreCase("RIGHT-TO-LEFT")) {
-				return "RIGHT";
-			} else {
-				return "LEFT";
-			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-			return null;
+		} catch (Exception e) {
+			reactantSlot_ = "LEFT";
+			productSlot_ = "RIGHT";
 		}
 	}
 	
 	/**
 	 * A way to generate SBML reaction IDs for instantiated reactions.
-	 * 
-	 * @param baseID
-	 * @return
 	 */
 	protected String generateReactionID() {
 		String baseID = "";
-		if (thisReactionFrame != null) baseID = thisReactionFrame.getLocalID();
-		else if (parentReaction != null) baseID = parentReaction.getLocalID();
-		else baseID = name;
+		if (thisReactionFrame_ != null) baseID = thisReactionFrame_.getLocalID();
+		else if (parentReaction_ != null) baseID = parentReaction_.getLocalID();
+		else baseID = name_;
 		
 		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID);
 		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID);
@@ -418,15 +374,13 @@ public class ReactionInstance {
 	/**
 	 * Test if a reaction is a generic reaction (i.e., it must contain at least one class frame in its reactions or products).
 	 * 
-	 * @param reaction
 	 * @return True if reaction is generic.
 	 */
 	@SuppressWarnings("unchecked")
-	protected boolean isGeneralizedReaction(JavacycConnection conn) {
-		boolean result = false;
+	protected boolean isGenericReaction(JavacycConnection conn) {
 		try {
-			ArrayList<String> leftMetabolites = thisReactionFrame.getSlotValues("LEFT");
-			ArrayList<String> rightMetabolites = thisReactionFrame.getSlotValues("RIGHT");
+			ArrayList<String> leftMetabolites = thisReactionFrame_.getSlotValues("LEFT");
+			ArrayList<String> rightMetabolites = thisReactionFrame_.getSlotValues("RIGHT");
 			
 			for (String left : leftMetabolites) {
 				if (conn.getFrameType(left).toUpperCase().equals(":CLASS")) return true;
@@ -438,7 +392,7 @@ public class ReactionInstance {
 		} catch (PtoolsErrorException e) {
 			e.printStackTrace();
 		}
-		return result;
+		return false;
 	}
 	
 	/**
@@ -462,10 +416,13 @@ public class ReactionInstance {
 	 * @return String of gene-reaction associations
 	 * @throws PtoolsErrorException
 	 */
-	protected String reactionGeneRule(JavacycConnection conn, boolean asBNumber) throws PtoolsErrorException {
-		String reactionID = "";
-		if (thisReactionFrame != null) reactionID = thisReactionFrame.getLocalID();
-		else reactionID = parentReaction.getLocalID();
+	protected String reactionGeneRule(boolean asBNumber) throws PtoolsErrorException {
+		Reaction reaction = null;
+		if (thisReactionFrame_ != null) reaction = thisReactionFrame_;
+		else reaction = parentReaction_;
+		
+		String reactionID = reaction.getLocalID();
+		JavacycConnection conn = reaction.getConnection();
 		
 		String orRule = "";
 		for (Object enzyme : conn.enzymesOfReaction(reactionID)) {
@@ -491,38 +448,38 @@ public class ReactionInstance {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void generateReactantProductMetaboliteInstances() {
-		reactants = new ArrayList<MetaboliteInstance>();
-		products = new ArrayList<MetaboliteInstance>();
+	private void initializeReactantProductMetaboliteInstances() {
+		reactants_ = new ArrayList<MetaboliteInstance>();
+		products_ = new ArrayList<MetaboliteInstance>();
 		try {
-			JavacycConnection conn = thisReactionFrame.getConnection();
+			JavacycConnection conn = thisReactionFrame_.getConnection();
 			
-			ArrayList<String> reactantIDs = thisReactionFrame.getSlotValues(reactionReactantSlot());
+			ArrayList<String> reactantIDs = thisReactionFrame_.getSlotValues(reactantSlot_);
 			for (String reactantID : reactantIDs) {
 				Frame metabolite = Frame.load(conn, reactantID);
-				String compartment = conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), reactantID, "COMPARTMENT");
+				String compartment = conn.getValueAnnot(thisReactionFrame_.getLocalID(), reactantSlot_, reactantID, "COMPARTMENT");
 				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
 				int coeficient = 1;
 				try {
-					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), reactantID, "COEFFICIENT"));
+					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame_.getLocalID(), reactantSlot_, reactantID, "COEFFICIENT"));
 				} catch (Exception e) {
 					coeficient = 1;
 				}
-				reactants.add(new MetaboliteInstance(metabolite, compartment, coeficient));
+				reactants_.add(new MetaboliteInstance(metabolite, compartment, coeficient));
 			}
 			
-			ArrayList<String> productIDs = thisReactionFrame.getSlotValues(reactionProductSlot());
+			ArrayList<String> productIDs = thisReactionFrame_.getSlotValues(productSlot_);
 			for (String productID : productIDs) {
 				Frame metabolite = Frame.load(conn, productID);
-				String compartment = conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), productID, "COMPARTMENT");
+				String compartment = conn.getValueAnnot(thisReactionFrame_.getLocalID(), productSlot_, productID, "COMPARTMENT");
 				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
 				int coeficient = 1;
 				try {
-					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame.getLocalID(), reactionReactantSlot(), productID, "COEFFICIENT"));
+					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame_.getLocalID(), productSlot_, productID, "COEFFICIENT"));
 				} catch (Exception e) {
 					coeficient = 1;
 				}
-				products.add(new MetaboliteInstance(metabolite, compartment, coeficient));
+				products_.add(new MetaboliteInstance(metabolite, compartment, coeficient));
 			}
 		} catch (PtoolsErrorException e) {
 			e.printStackTrace();
@@ -535,7 +492,7 @@ public class ReactionInstance {
  	 * Internal class to facilitate generic reaction instantiation by holding a metabolite class as "name" and all
  	 * metabolite instances of the class in "list".
  	 * 
- 	 * @author Jesse
+ 	 * @author Jesse Walsh
  	 */
  	private class NamedList {
 		public String name;
@@ -574,7 +531,7 @@ public class ReactionInstance {
  	/**
  	 * Internal class to facilitate generic reaction instantiation by holding the results of the listCombinations method.
  	 * 
- 	 * @author Jesse
+ 	 * @author Jesse Walsh
  	 */
  	private class ListCombinationResults {
  		public ArrayList<String> nameList;

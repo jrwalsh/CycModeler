@@ -174,8 +174,8 @@ public class Test {
 			} break;
 			case 60: {
 				// Check if a pathway contains a general term
-				modeler.isGeneralizedReaction("MALATE-DEHYDROGENASE-ACCEPTOR-RXN");
-				modeler.isGeneralizedReaction("SUCCINATE-DEHYDROGENASE-UBIQUINONE-RXN");
+//				modeler.isGeneralizedReaction("MALATE-DEHYDROGENASE-ACCEPTOR-RXN");
+//				modeler.isGeneralizedReaction("SUCCINATE-DEHYDROGENASE-UBIQUINONE-RXN");
 			} break;
 			case 80: {
 				// Look for conditions in comments
@@ -208,21 +208,21 @@ public class Test {
 					e.printStackTrace();
 				}
 			} break;
-			case 220: {
-				try {
-					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
-					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
-					rxn.reactants.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.DefaultCompartment, 1));
-					rxn.products.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.DefaultCompartment, 1));
-					rxns.add(rxn);
-					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
-//					doc = modeler.generateSBMLModel(doc, rxns);
-					SBMLWriter writer = new SBMLWriter();
-					writer.writeSBML(doc, modeler.OutputDirectory + "testing_SBML.xml");
-				} catch (PtoolsErrorException e) {
-					e.printStackTrace();
-				}
-			} break;
+//			case 220: {
+//				try {
+//					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
+////					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
+////					rxn.reactants_.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.DefaultCompartment, 1));
+////					rxn.products_.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.DefaultCompartment, 1));
+////					rxns.add(rxn);
+//					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
+////					doc = modeler.generateSBMLModel(doc, rxns);
+//					SBMLWriter writer = new SBMLWriter();
+//					writer.writeSBML(doc, modeler.OutputDirectory + "testing_SBML.xml");
+//				} catch (PtoolsErrorException e) {
+//					e.printStackTrace();
+//				}
+//			} break;
 			case 230: {
 //				readInPalssonIDMaps("/home/Jesse/Desktop/compare_palsson_ecocyc/iAF1260-ecocyc-rxn-mappings.txt");
 			} break;
