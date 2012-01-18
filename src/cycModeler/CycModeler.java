@@ -28,7 +28,7 @@ import edu.iastate.javacyco.*;
  */
 public class CycModeler {
 	static protected JavacycConnection conn = null;
-	static protected String OutputDirectory = "";
+	static protected String OutputDirectory = "/home/jesse/Desktop/output/";
 	static protected String DefaultCompartment = "CCO-CYTOSOL";
 	static protected int DefaultSBMLLevel = 2;
 	static protected int DefaultSBMLVersion = 1;
@@ -36,14 +36,16 @@ public class CycModeler {
 	static protected String SpeciesPrefix = "M";
 	static protected String ReactionPrefix = "R";
 	static protected String BoundaryCompartmentName = "Boundary";
-	static protected String ExchangeReactionSuffix = "exchange";
+	static protected String ExchangeReactionSuffix = "Exchange";
 	static protected String ModelName = "DefaultName";
 	
 	/**
 	 * Constructor: sets internal JavacycConnection object and initializes several default settings for generating models.
+	 * 
 	 * @param connectionString URL of the server running Pathway Tools
 	 * @param port Port that JavaCycO is listening on
 	 * @param organism Organism to connect to (i.e., selects which database to connect to)
+	 * @param configFile Path to configuration file
 	 */
 	public CycModeler (String connectionString, int port, String organism, String configFile) {
 		String CurrentConnectionString = connectionString;
@@ -53,25 +55,25 @@ public class CycModeler {
 		conn = new JavacycConnection(CurrentConnectionString,CurrentPort);
 		conn.selectOrganism(CurrentOrganism);
 		
-//		setDefaultSettings();
-		getConfigFile(configFile);
+		initializeFromConfigFile(configFile);
 	}
 	
 	
 	/**
 	 * Constructor: sets internal JavacycConnection object and initializes several default settings for generating models.
 	 * Does not set an organism for the JavacycConnection object.  Expects that the connection object has already selected an organism.
+	 * 
 	 * @param connection Initialized connection object
+	 * @param configFile Path to configuration file
 	 */
 	public CycModeler (JavacycConnection connection, String configFile) {
 		conn = connection;
-//		setDefaultSettings();
-		getConfigFile(configFile);
+		initializeFromConfigFile(configFile);
 	}
 	
 
 	// Methods
-	public void getConfigFile(String fileName) {
+	public void initializeFromConfigFile(String fileName) {
 		String outputDirectory = null;
 		String defaultCompartment = null;
 		int defaultSBMLLevel = 0;
@@ -91,6 +93,7 @@ public class CycModeler {
 			reader = new BufferedReader(new FileReader(configFile));
 			String text = null;
 			
+			// Parse settings from file
 			while ((text = reader.readLine()) != null) {
 				String command = text.substring(0, text.indexOf(" "));
 				String value = text.substring(text.indexOf(" ")+1);
@@ -113,11 +116,12 @@ public class CycModeler {
 						}
 					} break;
 					default: {
-						
+						System.err.println("Unknown config command : " + command);
 					} break;
 				}
 			}
 			
+			// Verify settings
 			assert outputDirectory != null;
 			assert defaultCompartment != null;
 			assert defaultSBMLLevel != 0;
@@ -129,7 +133,18 @@ public class CycModeler {
 			assert reactionPrefix != null;
 			assert compartmentAbrevs.size() != 0;
 			
-			setSettings(outputDirectory, defaultCompartment, defaultSBMLLevel, defaultSBMLVersion, modelName, boundaryCompartmentName, exchangeReactionSuffix, speciesPrefix, reactionPrefix, compartmentAbrevs);
+			// Set variables
+			OutputDirectory = outputDirectory;
+			DefaultCompartment = defaultCompartment;
+			DefaultSBMLLevel = defaultSBMLLevel;
+			DefaultSBMLVersion = defaultSBMLVersion;
+			ModelName = modelName;
+			BoundaryCompartmentName = boundaryCompartmentName;
+			ExchangeReactionSuffix = exchangeReactionSuffix;
+			SpeciesPrefix = speciesPrefix;
+			ReactionPrefix = reactionPrefix;
+			CompartmentAbrevs = compartmentAbrevs;
+//			setSettings(outputDirectory, defaultCompartment, defaultSBMLLevel, defaultSBMLVersion, modelName, boundaryCompartmentName, exchangeReactionSuffix, speciesPrefix, reactionPrefix, compartmentAbrevs);
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -153,54 +168,54 @@ public class CycModeler {
 		}
 	}
 	
-	/**
-	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
-	 * in the SBML models.
-	 */
-	public void setDefaultSettings() {
-		OutputDirectory = "/home/jesse/Desktop/output/";
-		DefaultCompartment = "CCO-CYTOSOL";
-		DefaultSBMLLevel = 2;
-		DefaultSBMLVersion = 1;
-		ModelName = "CBiRC";
-		
-		BoundaryCompartmentName = "Boundary";
-		ExchangeReactionSuffix = "Exchange";
-		
-		SpeciesPrefix = "M";
-		ReactionPrefix = "R";
-		
-		CompartmentAbrevs.put("CCO-CYTOSOL", "c");
-		CompartmentAbrevs.put("CCO-PERI-BAC", "periBac");
-		CompartmentAbrevs.put("CCO-PERIPLASM", "p");
-		CompartmentAbrevs.put("CCO-EXTRACELLULAR", "e");
-		CompartmentAbrevs.put("CCO-CYTOPLASM", "cp");
-		CompartmentAbrevs.put("CCO-UNKNOWN-SPACE", "unk");
-		CompartmentAbrevs.put("CCO-IN", "i");
-		CompartmentAbrevs.put("CCO-OUT", "o");
-		CompartmentAbrevs.put("CCO-MIDDLE", "m");
-		CompartmentAbrevs.put("Boundary", "b");
-	}
+//	/**
+//	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
+//	 * in the SBML models.
+//	 */
+//	public void setDefaultSettings() {
+//		OutputDirectory = "/home/jesse/Desktop/output/";
+//		DefaultCompartment = "CCO-CYTOSOL";
+//		DefaultSBMLLevel = 2;
+//		DefaultSBMLVersion = 1;
+//		ModelName = "CBiRC";
+//		
+//		BoundaryCompartmentName = "Boundary";
+//		ExchangeReactionSuffix = "Exchange";
+//		
+//		SpeciesPrefix = "M";
+//		ReactionPrefix = "R";
+//		
+//		CompartmentAbrevs.put("CCO-CYTOSOL", "c");
+//		CompartmentAbrevs.put("CCO-PERI-BAC", "periBac");
+//		CompartmentAbrevs.put("CCO-PERIPLASM", "p");
+//		CompartmentAbrevs.put("CCO-EXTRACELLULAR", "e");
+//		CompartmentAbrevs.put("CCO-CYTOPLASM", "cp");
+//		CompartmentAbrevs.put("CCO-UNKNOWN-SPACE", "unk");
+//		CompartmentAbrevs.put("CCO-IN", "i");
+//		CompartmentAbrevs.put("CCO-OUT", "o");
+//		CompartmentAbrevs.put("CCO-MIDDLE", "m");
+//		CompartmentAbrevs.put("Boundary", "b");
+//	}
 	
-	/**
-	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
-	 * in the SBML models.
-	 */
-	public void setSettings(String outputDirectory, String defaultCompartment, int defaultSBMLLevel, int defaultSBMLVersion, String modelName, String boundaryCompartmentName, String exchangeReactionSuffix, String speciesPrefix, String reactionPrefix, HashMap<String, String> compartmentAbrevs) {
-		OutputDirectory = outputDirectory;
-		DefaultCompartment = defaultCompartment;
-		DefaultSBMLLevel = defaultSBMLLevel;
-		DefaultSBMLVersion = defaultSBMLVersion;
-		ModelName = modelName;
-		
-		BoundaryCompartmentName = boundaryCompartmentName;
-		ExchangeReactionSuffix = exchangeReactionSuffix;
-		
-		SpeciesPrefix = speciesPrefix;
-		ReactionPrefix = reactionPrefix;
-		
-		CompartmentAbrevs = compartmentAbrevs;
-	}
+//	/**
+//	 * Initializes default settings for generating SBML models and for translating information from EcoCyc for use
+//	 * in the SBML models.
+//	 */
+//	public void setSettings(String outputDirectory, String defaultCompartment, int defaultSBMLLevel, int defaultSBMLVersion, String modelName, String boundaryCompartmentName, String exchangeReactionSuffix, String speciesPrefix, String reactionPrefix, HashMap<String, String> compartmentAbrevs) {
+//		OutputDirectory = outputDirectory;
+//		DefaultCompartment = defaultCompartment;
+//		DefaultSBMLLevel = defaultSBMLLevel;
+//		DefaultSBMLVersion = defaultSBMLVersion;
+//		ModelName = modelName;
+//		
+//		BoundaryCompartmentName = boundaryCompartmentName;
+//		ExchangeReactionSuffix = exchangeReactionSuffix;
+//		
+//		SpeciesPrefix = speciesPrefix;
+//		ReactionPrefix = reactionPrefix;
+//		
+//		CompartmentAbrevs = compartmentAbrevs;
+//	}
 	
 	/**
 	 * This method will create a new genome-scale model from an EcoCyc database. All reactions are included other than 
@@ -394,7 +409,7 @@ public class CycModeler {
 		Model model = doc.getModel();
 		ArrayList<String> metabolites = new ArrayList<String>();
 		ArrayList<String> compartments = new ArrayList<String>();
-		ArrayList<ReactionInstance> reactionInstances = reactionNetwork.reactions;
+		ArrayList<ReactionInstance> reactionInstances = reactionNetwork.reactions_;
 		
 		// Get mappings to iAF1260
 //		HashMap<String, ArrayList<String>> map = readMap("/home/Jesse/output/e2p");
@@ -403,16 +418,16 @@ public class CycModeler {
 			// Create compartment list
 			for (ReactionInstance reaction : reactionInstances) {
 				ArrayList<MetaboliteInstance> reactantsProducts = new ArrayList<MetaboliteInstance>();
-				reactantsProducts.addAll(reaction.reactants);
-				reactantsProducts.addAll(reaction.products);
+				reactantsProducts.addAll(reaction.reactants_);
+				reactantsProducts.addAll(reaction.products_);
 				for (MetaboliteInstance species : reactantsProducts) {
-					if (!compartments.contains(species.compartment)) {
+					if (!compartments.contains(species.compartment_)) {
 						Compartment compartment = model.createCompartment();
-						compartment.setId(convertToSBMLSafe(species.compartment));
-						compartment.setName(species.compartment);
+						compartment.setId(convertToSBMLSafe(species.compartment_));
+						compartment.setName(species.compartment_);
 //						if (compartment.setId(convertToSBMLSafe(species.compartment)) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //						if (compartment.setName(species.compartment) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
-						compartments.add(species.compartment);
+						compartments.add(species.compartment_);
 					}
 				}
 			}
@@ -420,15 +435,15 @@ public class CycModeler {
 			// Create species list
 			for (ReactionInstance reaction : reactionInstances) {
 				ArrayList<MetaboliteInstance> reactantsProducts = new ArrayList<MetaboliteInstance>();
-				reactantsProducts.addAll(reaction.reactants);
-				reactantsProducts.addAll(reaction.products);
+				reactantsProducts.addAll(reaction.reactants_);
+				reactantsProducts.addAll(reaction.products_);
 				for (MetaboliteInstance species : reactantsProducts) {
 					if (!metabolites.contains(species.generateSpeciesID())) {
 						Species newSpecies = model.createSpecies();
 						String sid = species.generateSpeciesID();
 						newSpecies.setId(sid);
-						newSpecies.setName(species.metabolite.getCommonName());
-						newSpecies.setCompartment(model.getCompartment(convertToSBMLSafe(species.compartment)).getId());
+						newSpecies.setName(species.metabolite_.getCommonName());
+						newSpecies.setCompartment(model.getCompartment(convertToSBMLSafe(species.compartment_)).getId());
 						newSpecies.setBoundaryCondition(false);
 //						if (newSpecies.setId(sid) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //						if (newSpecies.setName(species.metabolite.getCommonName()) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
@@ -438,7 +453,7 @@ public class CycModeler {
 						
 						// Append Notes
 						newSpecies.appendNotes("Palsson SID : \n");
-						newSpecies.appendNotes("EcoCyc Frame ID : " + species.metabolite.getLocalID() + "\n");
+						newSpecies.appendNotes("EcoCyc Frame ID : " + species.metabolite_.getLocalID() + "\n");
 						newSpecies.appendNotes("Chemical Formula : " + "\n");
 					}
 				}
@@ -447,11 +462,11 @@ public class CycModeler {
 			// Create reaction list
 			for (ReactionInstance reaction : reactionInstances) {
 				org.sbml.libsbml.Reaction newReaction = model.createReaction();
-				if (reaction.thisReactionFrame != null) newReaction.setId(reaction.generateReactionID());
-				else if (reaction.parentReaction != null) newReaction.setId(reaction.generateReactionID());
+				if (reaction.thisReactionFrame_ != null) newReaction.setId(reaction.generateReactionID());
+				else if (reaction.parentReaction_ != null) newReaction.setId(reaction.generateReactionID());
 				else newReaction.setId(reaction.generateReactionID());
-				newReaction.setName(reaction.name);
-				newReaction.setReversible(reaction.reversible);
+				newReaction.setName(reaction.name_);
+				newReaction.setReversible(reaction.reversible_);
 //				if (reaction.thisReactionFrame != null) {
 //					if (newReaction.setId(convertToSBMLSafe(reaction.thisReactionFrame.getLocalID())) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //				} else if (reaction.parentReaction != null) {
@@ -461,20 +476,20 @@ public class CycModeler {
 //				}
 //				if (newReaction.setName(reaction.name) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 				
-				for (MetaboliteInstance reactant : reaction.reactants) {
+				for (MetaboliteInstance reactant : reaction.reactants_) {
 					String sid = reactant.generateSpeciesID();
 					SpeciesReference ref = newReaction.createReactant();
 					ref.setSpecies(sid);
-					ref.setStoichiometry(reactant.stoichiometry);
+					ref.setStoichiometry(reactant.coefficient_);
 //					if (ref.setSpecies(sid) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //					if (ref.setStoichiometry(reactant.stoichiometry) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //					if (newReaction.addReactant(ref) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 				}
-				for (MetaboliteInstance product : reaction.products) {
+				for (MetaboliteInstance product : reaction.products_) {
 					String sid = product.generateSpeciesID();
 					SpeciesReference ref = newReaction.createProduct();
 					ref.setSpecies(sid);
-					ref.setStoichiometry(product.stoichiometry);
+					ref.setStoichiometry(product.coefficient_);
 //					if (ref.setSpecies(sid) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //					if (ref.setStoichiometry(product.stoichiometry) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //					if (newReaction.addProduct(ref) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
@@ -522,8 +537,8 @@ public class CycModeler {
 				newReaction.appendNotes("SUBSYSTEM : \n");
 				newReaction.appendNotes("Equation : \n");
 				newReaction.appendNotes("Confidence Level : \n");
-				if (reaction.thisReactionFrame != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(conn, false));//reactionGeneRule(reaction.thisReactionFrame.getLocalID(), false));
-				else if (reaction.parentReaction != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(conn, false));//reaction.reactionGeneRule(reaction.parentReaction.getLocalID(), false));
+				if (reaction.thisReactionFrame_ != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reactionGeneRule(reaction.thisReactionFrame.getLocalID(), false));
+				else if (reaction.parentReaction_ != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reaction.reactionGeneRule(reaction.parentReaction.getLocalID(), false));
 				else newReaction.appendNotes("Gene Rule : ");
 			}
 		} catch (PtoolsErrorException e) {
@@ -576,40 +591,40 @@ public class CycModeler {
 		return doc;
 	}
 	
-	/**
-	 * Test if a reaction is a generic reaction (i.e., it must contain at least one class frame in its reactions or products).
-	 * 
-	 * @param reactionName
-	 * @return True if reaction is generic.
-	 */
-	protected boolean isGeneralizedReaction(String reactionName) {
-		boolean result = false;
-		try {
-//			Reaction reaction = loadReaction(reactionName);
-			Reaction reaction = (Reaction)Reaction.load(conn, reactionName);
-			ReactionInstance reactionInstance = new ReactionInstance(reaction);
-			result = reactionInstance.isGeneralizedReaction(conn);
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
+//	/**
+//	 * Test if a reaction is a generic reaction (i.e., it must contain at least one class frame in its reactions or products).
+//	 * 
+//	 * @param reactionName
+//	 * @return True if reaction is generic.
+//	 */
+//	protected boolean isGeneralizedReaction(String reactionName) {
+//		boolean result = false;
+//		try {
+////			Reaction reaction = loadReaction(reactionName);
+//			Reaction reaction = (Reaction)Reaction.load(conn, reactionName);
+//			ReactionInstance reactionInstance = new ReactionInstance(reaction);
+//			result = reactionInstance.isGeneralizedReaction(conn);
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		return result;
+//	}
 	
-	/**
-	 * Test if a metabolite is a generic metabolite (i.e., it must be a class frame).
-	 * 
-	 * @param metaboliteName
-	 * @return True if metabolite is generic.
-	 */
-	private boolean isGeneralizedMetabolite(String metaboliteName) {
-		boolean result = false;
-		try {
-			if (conn.getFrameType(metaboliteName).toUpperCase().equals(":CLASS")) result = true;
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
+//	/**
+//	 * Test if a metabolite is a generic metabolite (i.e., it must be a class frame).
+//	 * 
+//	 * @param metaboliteName
+//	 * @return True if metabolite is generic.
+//	 */
+//	private boolean isGeneralizedMetabolite(String metaboliteName) {
+//		boolean result = false;
+//		try {
+//			if (conn.getFrameType(metaboliteName).toUpperCase().equals(":CLASS")) result = true;
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		return result;
+//	}
 	
 	/**
 	 * Replace characters that are commonly used in EcoCyc with characters safe to use in SBML names and IDs.
@@ -665,31 +680,29 @@ public class CycModeler {
 		return output;
 	}
 	
-	/**
-	 * TODO Remove and switch to Frame.load() 
-	 * 
-	 * @param id
-	 * @return
-	 */
-	protected Frame loadFrame(String id) {
-		Frame frame = new Frame(conn, id);
-		try {
-			if (frame.inKB()) return frame;
-			else if (!id.startsWith("|") && !id.endsWith("|")) {
-				Frame classFrame = new Frame(conn, "|"+id+"|");
-				if (classFrame.inKB()) return classFrame;
-			} else if (id.startsWith("|") && id.endsWith("|")) {
-				Frame instanceFrame = new Frame(conn, id.substring(1, id.length()-1));
-				if (instanceFrame.inKB()) return instanceFrame;
-			}
-		} catch (PtoolsErrorException e) {
-			System.err.println("Error: Unable to load frame " + id);
-		}
-		return null;
-	}
+//	/**
+//	 * 
+//	 * @param id
+//	 * @return
+//	 */
+//	protected Frame loadFrame(String id) {
+//		Frame frame = new Frame(conn, id);
+//		try {
+//			if (frame.inKB()) return frame;
+//			else if (!id.startsWith("|") && !id.endsWith("|")) {
+//				Frame classFrame = new Frame(conn, "|"+id+"|");
+//				if (classFrame.inKB()) return classFrame;
+//			} else if (id.startsWith("|") && id.endsWith("|")) {
+//				Frame instanceFrame = new Frame(conn, id.substring(1, id.length()-1));
+//				if (instanceFrame.inKB()) return instanceFrame;
+//			}
+//		} catch (PtoolsErrorException e) {
+//			System.err.println("Error: Unable to load frame " + id);
+//		}
+//		return null;
+//	}
 	
 //	/**
-//	 * TODO Remove and switch to Frame.load() 
 //	 * 
 //	 * @param id
 //	 * @return
@@ -700,29 +713,27 @@ public class CycModeler {
 //		else return null;
 //	}
 	
-	/**
-	 * TODO Remove and switch to Frame.load() 
-	 * 
-	 * @param id
-	 * @return
-	 */
-	protected Reaction loadReaction(String id) throws PtoolsErrorException {
-		Reaction f = new Reaction(conn, id);
-		if (f.inKB()) return f;
-		else return null;
-	}
+//	/**
+//	 * 
+//	 * @param id
+//	 * @return
+//	 */
+//	protected Reaction loadReaction(String id) throws PtoolsErrorException {
+//		Reaction f = new Reaction(conn, id);
+//		if (f.inKB()) return f;
+//		else return null;
+//	}
 	
-	/**
-	 * TODO Remove and switch to Frame.load() 
-	 * 
-	 * @param id
-	 * @return
-	 */
-	private Pathway loadPathway(String id) throws PtoolsErrorException {
-		Pathway f = new Pathway(conn, id);
-		if (f.inKB()) return f;
-		else return null;
-	}
+//	/**
+//	 * 
+//	 * @param id
+//	 * @return
+//	 */
+//	private Pathway loadPathway(String id) throws PtoolsErrorException {
+//		Pathway f = new Pathway(conn, id);
+//		if (f.inKB()) return f;
+//		else return null;
+//	}
 	
 	/**
 	 * Simple function to print a string to the specified file location.
@@ -752,9 +763,9 @@ public class CycModeler {
 		String outString = "";
 		try {
 			for (ReactionInstance reaction : reactions) {
-				if (reaction.reactants.size() > 0) {
-					Frame m = reaction.reactants.get(0).metabolite;
-					outString += m.getLocalID() + "\t" + m.getCommonName() + "\t" + reaction.reactants.get(0).chemicalFormula + "\t";
+				if (reaction.reactants_.size() > 0) {
+					Frame m = reaction.reactants_.get(0).metabolite_;
+					outString += m.getLocalID() + "\t" + m.getCommonName() + "\t" + reaction.reactants_.get(0).chemicalFormula_ + "\t";
 					
 					String keggID = "";
 					ArrayList dblinks = null;
@@ -796,6 +807,6 @@ public class CycModeler {
 	        } catch (Exception e) {
 	            return NOVALUE;
 	        }
-	    }   
+	    }  
 	}
 }

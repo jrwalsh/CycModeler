@@ -8,54 +8,50 @@ import edu.iastate.javacyco.PtoolsErrorException;
 
 public class ReactionNetwork {
 	private JavacycConnection conn = null;
-	ArrayList<ReactionInstance> reactions;
+	ArrayList<ReactionInstance> reactions_;
 
 	// Network modification statistics
-	private boolean debug = true;
-	private int totalStartingReactions = 0;
-	private int filteredReactions = 0;
-	private int genericReactionsFound = 0;
-	private int genericReactionsInstantiated = 0;
-	private int instantiatedReactions = 0;
-	private int boundaryMetabolitesFound = 0;
-	private int boundaryReactionsAdded = 0;
+	private boolean debug_ = true;
+	private int totalStartingReactions_ = 0;
+	private int filteredReactions_ = 0;
+	private int genericReactionsFound_ = 0;
+	private int genericReactionsInstantiated_ = 0;
+	private int instantiatedReactions_ = 0;
+	private int boundaryMetabolitesFound_ = 0;
+	private int boundaryReactionsAdded_ = 0;
 	
 	public ReactionNetwork (JavacycConnection connection, ArrayList<ReactionInstance> reactions) {
 		conn = connection;
-		this.reactions = reactions;
+		reactions_ = reactions;
 		
-		if (debug) totalStartingReactions += reactions.size();
+		if (debug_) totalStartingReactions_ += reactions.size();
 	}
 	
 	/**
-	 * Creates exchange reactions for each metabolite that, for any reaction in reactions list, is also in compartment at least once.
+	 * Creates exchange reactions for each metabolite that, for any reaction in reactions list, is also in compartment at least once. Adds these new reactions
+	 * to the reactions_ variable.
 	 * 
 	 * @param compartment Compartment in which exchange reactions to metabolites will be created
-	 * @param reactions List of all reaction in model, which provides metabolite and compartment information
-	 * @return Exchange reactions
+	 * @return Exchange reactions created
 	 */
 	public ArrayList<ReactionInstance> addBoundaryReactionsByCompartment(String compartment) {
 		ArrayList<Frame> exchangeMetabolites = new ArrayList<Frame>();
 		ArrayList<String> exchangeMetaboliteIDs = new ArrayList<String>();
-		if (reactions == null) {
-			//TODO
-		}
+		
+		assert reactions_ != null;
 		
 		// For each reaction, check for reactants or products which are consumed or produced in compartment
-		for (ReactionInstance reaction : reactions) {
-			ArrayList<MetaboliteInstance> allReactants = reaction.reactants;
-			ArrayList<MetaboliteInstance> allProducts = reaction.products;
-			
-			for (MetaboliteInstance reactant : allReactants) {
-				if (reactant.compartment.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.metabolite.getLocalID())) {
-					exchangeMetabolites.add(reactant.metabolite);
-					exchangeMetaboliteIDs.add(reactant.metabolite.getLocalID());
+		for (ReactionInstance reaction : reactions_) {
+			for (MetaboliteInstance reactant : reaction.reactants_) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.metabolite_.getLocalID())) {
+					exchangeMetabolites.add(reactant.metabolite_);
+					exchangeMetaboliteIDs.add(reactant.metabolite_.getLocalID());
 				}
 			}
-			for (MetaboliteInstance product : allProducts) {
-				if (product.compartment.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.metabolite.getLocalID())) {
-					exchangeMetabolites.add(product.metabolite);
-					exchangeMetaboliteIDs.add(product.metabolite.getLocalID());
+			for (MetaboliteInstance product : reaction.products_) {
+				if (product.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.metabolite_.getLocalID())) {
+					exchangeMetabolites.add(product.metabolite_);
+					exchangeMetaboliteIDs.add(product.metabolite_.getLocalID());
 				}
 			}
 		}
@@ -70,10 +66,10 @@ public class ReactionNetwork {
 			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, true, reactants, products));
 		}
 		
-		reactions.addAll(exchangeReactions);
-		if (debug) {
-			boundaryMetabolitesFound += exchangeMetabolites.size();
-			boundaryReactionsAdded += exchangeReactions.size();
+		reactions_.addAll(exchangeReactions);
+		if (debug_) {
+			boundaryMetabolitesFound_ += exchangeMetabolites.size();
+			boundaryReactionsAdded_ += exchangeReactions.size();
 		}
 		
 		return exchangeReactions;
@@ -122,9 +118,10 @@ public class ReactionNetwork {
 	}
 	
 	/**
-	 * Remove all Reactions from the ArrayList reactions which are either an instance of any of the EcoCyc classes in classToFilter, or
+	 * Remove all Reactions from the ArrayList reactions_ which are either an instance of any of the EcoCyc classes in classToFilter, or
 	 * are explicitly named with their EcoCyc Frame ID in the reactionsToFilter list. 
-	 * @param reactions List of Reactions to which the filter will be applied
+	 * 
+	 * @param reactions_ List of Reactions to which the filter will be applied
 	 * @param classToFilter EcoCyc Frame ID of a class frame, instances of which should be removed from reactions
 	 * @param reactionsToFilter EcoCyc Frame ID of a reaction frame which should be removed from reactions
 	 * @return FilterResults containing the filtered reaction list and a list of reactions actually removed
@@ -148,13 +145,13 @@ public class ReactionNetwork {
 			e.printStackTrace();
 		}
 		
-		for (ReactionInstance reaction : reactions) {
-			if (filter.contains(reaction.thisReactionFrame.getLocalID())) removedList.add(reaction);
+		for (ReactionInstance reaction : reactions_) {
+			if (filter.contains(reaction.thisReactionFrame_.getLocalID())) removedList.add(reaction);
 			else keepList.add(reaction);
 		}
 		
-		reactions = keepList;
-		if (debug) filteredReactions += keepList.size();
+		reactions_ = keepList;
+		if (debug_) filteredReactions_ += removedList.size();
 		
 		return new FilterResults(keepList, removedList);
 	}
@@ -167,14 +164,13 @@ public class ReactionNetwork {
 	 * Also, reactions have been found that should occur but do not pass the elemental balancing step due to missing proton/water
 	 * molecules.
 	 * 
-	 * @param reactions List of reactions to instantiate
 	 * @return Results of the attempt to instantiate generic reactions
 	 */
 	public InstantiationResults generateSpecificReactionsFromGenericReactions() {
 		InstantiationResults instantiationResults = new InstantiationResults(new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>());
 		
-		for (ReactionInstance reaction : reactions) {
-			if (reaction.isGeneralizedReaction(conn)) {
+		for (ReactionInstance reaction : reactions_) {
+			if (reaction.isGenericReaction(conn)) {
 				instantiationResults.genericReactionsFound.add(reaction);
 				ArrayList<ReactionInstance> instantiatedReactions = reaction.generateInstantiatedReactions();
 				if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
@@ -187,12 +183,12 @@ public class ReactionNetwork {
 			}
 		}
 		
-		reactions = instantiationResults.nonGenericReaction;
-		reactions.addAll(instantiationResults.instantiatedReactions);
-		if (debug) {
-			genericReactionsFound += instantiationResults.genericReactionsFound.size();
-			genericReactionsInstantiated += instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size();
-			instantiatedReactions += instantiationResults.instantiatedReactions.size();
+		reactions_ = instantiationResults.nonGenericReaction;
+		reactions_.addAll(instantiationResults.instantiatedReactions);
+		if (debug_) {
+			genericReactionsFound_ += instantiationResults.genericReactionsFound.size();
+			genericReactionsInstantiated_ += instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size();
+			instantiatedReactions_ += instantiationResults.instantiatedReactions.size();
 		}
 		
 		return instantiationResults;
@@ -200,15 +196,15 @@ public class ReactionNetwork {
 	
 	public void printNetworkStatistics() {
 		System.out.println("Writing statistics ...");
-		System.out.println("All reactions : " + totalStartingReactions);
-		System.out.println("Removed reactions due to filtering : " + filteredReactions);
-		System.out.println("Generic reactions found : " + genericReactionsFound);
-		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated);
-		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions);
-		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound);
-		System.out.println("Exchange reactions added : " + boundaryReactionsAdded);
+		System.out.println("All reactions : " + totalStartingReactions_);
+		System.out.println("Removed reactions due to filtering : " + filteredReactions_);
+		System.out.println("Generic reactions found : " + genericReactionsFound_);
+		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated_);
+		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions_);
+		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound_);
+		System.out.println("Exchange reactions added : " + boundaryReactionsAdded_);
 		System.out.println("Total transport reactions in network (excluding exchange and diffusion): " + countTransportReactions());
-		System.out.println("Total reactions in network: " + reactions.size());
+		System.out.println("Total reactions in network: " + reactions_.size());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -217,12 +213,12 @@ public class ReactionNetwork {
 		int transportReactionCount = 0;
 		try {
 			list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
-			for (ReactionInstance reaction : reactions) {
-				if (reaction.thisReactionFrame != null) {
-					if (list.contains(reaction.thisReactionFrame.getLocalID())) transportReactionCount++;
+			for (ReactionInstance reaction : reactions_) {
+				if (reaction.thisReactionFrame_ != null) {
+					if (list.contains(reaction.thisReactionFrame_.getLocalID())) transportReactionCount++;
 				}
-				else if (reaction.parentReaction != null) {
-					if (list.contains(reaction.parentReaction.getLocalID())) transportReactionCount++;
+				else if (reaction.parentReaction_ != null) {
+					if (list.contains(reaction.parentReaction_.getLocalID())) transportReactionCount++;
 				}
 			}
 		} catch (PtoolsErrorException e) {
