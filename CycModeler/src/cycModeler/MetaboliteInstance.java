@@ -22,12 +22,12 @@ public class MetaboliteInstance {
 	 * 
 	 * @param metabolite
 	 * @param compartment
-	 * @param stoichiometry
+	 * @param coefficient
 	 */
-	public MetaboliteInstance(Frame metabolite, String compartment, int stoichiometry) {
+	public MetaboliteInstance(Frame metabolite, String compartment, int coefficient) {
 		metabolite_ = metabolite;
 		compartment_ = compartment;
-		coefficient_ = stoichiometry;
+		coefficient_ = coefficient;
 		chemicalFormula_ = fetchChemicalFormula();
 		keggID_ = fetchKeggID();
 	}
@@ -99,7 +99,7 @@ public class MetaboliteInstance {
 	}
 	
 	/**
-	 * Prepends a species prefix to the beginning of the metabolite ID, then appends compartment appreviations to the end of the SBML metabolite ID.  This 
+	 * Prepends a species prefix to the beginning of the metabolite ID, then appends compartment abbreviations to the end of the SBML metabolite ID.  This 
 	 * helps to identify metabolite IDs from other ID types in the finished model, as well as allows metabolites in separate compartments to be treated
 	 * separately.
 	 * 

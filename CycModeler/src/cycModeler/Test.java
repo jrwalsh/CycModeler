@@ -84,55 +84,104 @@ public class Test {
 	}
 	
 	public static void test() {
-//		Diffusion diffusion = new Diffusion(conn);
-//		diffusion.getSmallMetabolites();
-		
 		try {
-			ArrayList<String> to = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :to-compartment '"+"CCO-PERI-BAC");
-			ArrayList<String> from = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :from-compartment '"+"CCO-PERI-BAC");
-			TreeSet<String> unique = new TreeSet<String>();
-			for (String s : to) {
-				unique.add(s);
-			}
-			for (String s : from) {
-				unique.add(s);
-			}
-			try {
-				int goodcount = 0;
-				int nullcount = 0;
-				for (String s : unique) {
-					String slot = Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT");
-					if (slot != null && slot.contains("d")) {
-						slot = slot.substring(0, slot.indexOf("d")-1);
-					}
-					Float parse;
-					try {
-						parse = Float.parseFloat(slot);
-					} catch (Exception e) {
-						parse = (float) 800.0;
-					}
-					if (slot == null) {
-						nullcount++;
-//						System.err.println(nullcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
-					} else if (parse < 600) {
-						goodcount++;
-						System.out.println(goodcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
-					}
-				}
-				System.out.println(nullcount);
-			} catch (Exception e) {
-				
+			
+			for (Object s : conn.callFuncArray("all-transported-chemicals :to-compartment 'CCO-EXTRACELLULAR")) {
+				System.out.println(s.toString());
 			}
 			
-//			for (String s : unique) {
-//				System.out.println(Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+			
+//			int count = 0;
+//			for (Reaction reaction : Reaction.all(conn)) {
+//				for (Object s : conn.callFuncArray("compartments-of-reaction '" + reaction.getLocalID())) {
+//					System.out.println(reaction.getLocalID() + " :: " + s.toString());
+//				}
+//				
+////				if (conn.callFuncBool("rxn-in-compartment-p '" + reaction.getLocalID() + " '" + "CCO-EXTRACELLULAR")) {
+////					count++;
+////				}
 //			}
-//			System.out.println(to.size());
-//			System.out.println(from.size());
-//			System.out.println(unique.size());
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
+//			System.out.println(count);
+			
+			
+//			ReactionInstance rxnInst = new ReactionInstance((Reaction)Frame.load(conn, "PGLUCISOM-RXN"));
+//			rxnInst.getCompartmentOfMetabolite();
+			
+			
+			
+			
+//			Frame rxn1 = Frame.load(conn, "TRANS-RXN-94");
+//			rxn1.print();
+//			for (String s : conn.getAllAnnotLabels(rxn1.getLocalID(), "RXN-LOCATIONS", "CCO-PM-BAC-NEG")) {
+//				System.out.println("annot: " + s + " : " + conn.getValueAnnot(rxn1.getLocalID(), "RXN-LOCATIONS", "CCO-PM-BAC-NEG", s));
+//			}
+			
+//			Frame rxn2 = Frame.load(conn, "PGLUCISOM-RXN");
+//			rxn2.print();
+//			
+//			Frame rxn3 = Frame.load(conn, "RXN0-1483");
+//			rxn3.print();
+//			
+//			Frame rxn4 = Frame.load(conn, "TRANS-RXN0-455");
+//			rxn4.print();
+			
+//			Frame rxn5 = Frame.load(conn, "RXN-2043");
+//			rxn5.print();
+			
+		} catch (PtoolsErrorException e1) {
+			e1.printStackTrace();
 		}
+		
+		
+		
+		
+		
+//		try {
+//			ArrayList<String> to = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :to-compartment '"+"CCO-PERI-BAC");
+//			ArrayList<String> from = (ArrayList<String>)conn.callFuncArray("all-transported-chemicals :from-compartment '"+"CCO-PERI-BAC");
+//			TreeSet<String> unique = new TreeSet<String>();
+//			for (String s : to) {
+//				unique.add(s);
+//			}
+//			for (String s : from) {
+//				unique.add(s);
+//			}
+//			try {
+//				int goodcount = 0;
+//				int nullcount = 0;
+//				for (String s : unique) {
+//					String slot = Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT");
+//					if (slot != null && slot.contains("d")) {
+//						slot = slot.substring(0, slot.indexOf("d")-1);
+//					}
+//					Float parse;
+//					try {
+//						parse = Float.parseFloat(slot);
+//					} catch (Exception e) {
+//						parse = (float) 800.0;
+//					}
+//					if (slot == null) {
+//						nullcount++;
+////						System.err.println(nullcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+//					} else if (parse < 600) {
+//						goodcount++;
+//						System.out.println(goodcount + " :: " + Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+//					}
+//				}
+//				System.out.println(nullcount);
+//			} catch (Exception e) {
+//				
+//			}
+//			
+////			for (String s : unique) {
+////				System.out.println(Frame.load(conn, s).getCommonName() + " : " + Frame.load(conn, s).getSlotValue("MOLECULAR-WEIGHT"));
+////			}
+////			System.out.println(to.size());
+////			System.out.println(from.size());
+////			System.out.println(unique.size());
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
 			
 //		try {
 //			Frame f = Frame.load(conn, "TRANS-RXN0-234");
