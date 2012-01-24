@@ -6,3 +6,18 @@ Reactions with non-existing metabolites
 
 Reactions with two of the same generic metabolite on the same side
 	3.1.26.12-RXN
+	
+Compartment concerns: (http://ecocyc.org/PGDBConceptsGuide.shtml#node_sec_3.6)
+  Example of an "S" type reaction -> PGLUCISOM-RXN
+  Example of a "T" type reaction -> TRANS-RXN-94
+  Example of a reaction occuring in multiple compartments -> RXN0-1483
+  
+  S types occur in only one compartment and have no values in the "RXN-LOCATIONS" slot, or exist in multiple or non-standard compartments and have value(s)
+    that are children CCO-SPACE.  These values may be mapped to specific Enzyme Reactions with the "ENZRXNS" annotation.
+  T types occur across at least 2 compartments.  The value in RXN-LOCATIONS is a child of CCO-MEMBRANE; annotations on the RXN-LOCATIONS values mapping
+    CCO-IN, CCO-OUT, and possibly CCO-MIDDLE to children of CCO-SPACE.  This mapping can then be used to determine the space the metabolites exist in.
+  
+  An interesting example of a reaction which does not have any compartment information -> RXN0-5388
+    It would seem that the members of the Electron-Transfer-Reactions class have reactant/product pairs that are "in the membrane"??? Since the membrane is
+    not a child of space, no CCO-SPACE term is given.  This leads to the choice of assuming null compartment, default compartment, or making a new compartment
+    for the membrane itself.

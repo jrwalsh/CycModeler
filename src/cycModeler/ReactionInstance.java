@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
+import edu.iastate.javacyco.Pathway;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
@@ -22,29 +23,35 @@ public class ReactionInstance {
 	public ArrayList<MetaboliteInstance> products_;
 	public String reactantSlot_;
 	public String productSlot_;
+	public String specificLocation_;
 	
-	
-	public ReactionInstance(Reaction thisReactionFrame) {
-		thisReactionFrame_ = thisReactionFrame;
+	public ReactionInstance(Reaction thisReactionFrame) throws PtoolsErrorException {
+		this(null, thisReactionFrame, thisReactionFrame.getCommonName(), thisReactionFrame.isReversible(), null, null, null, true);
 	}
 	
 	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible) {
-		parentReaction_ = parentReactionFrame;
-		thisReactionFrame_ = thisReactionFrame;
-		name_ = name;
-		reversible_ = reversible;
-		initializeReactantProductSlotVariables();
-		initializeReactantProductMetaboliteInstances();
+		this(parentReactionFrame, thisReactionFrame, name, reversible, null, null, null, true);
 	}
 	
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
+	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation) {
+		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, null, null, true);
+	}
+	
+	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
+		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, reactants, products, false);
+	}
+	
+	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products, boolean initializeReactantsProducts) {
 		parentReaction_ = parentReactionFrame;
 		thisReactionFrame_ = thisReactionFrame;
 		name_ = name;
 		reversible_ = reversible;
+		specificLocation_ = specificLocation;
 		reactants_ = reactants;
 		products_ = products;
 		initializeReactantProductSlotVariables();
+		
+		if (initializeReactantsProducts) initializeReactantProductMetaboliteInstances();
 	}
 
 	
@@ -55,7 +62,8 @@ public class ReactionInstance {
 	 * Note: This method does not interpret chemical shorthand (eg R-groups, etc), but does make a special case for electron acceptors and donors.
 	 * An acceptor is treated as one "A" (for acceptor), while a donor is treated as 1 "A" and 2 "H" (hydrogen). This method also
 	 * assumes strict matching only, so a missing proton or water will result in a failed test for balance, even though these compounds can
-	 * sometimes assumed to be present. (Reactions missing a water or proton have been found in EcoCyc on occasion).
+	 * sometimes assumed to be present. (Reactions missing a water or proton have been found in EcoCyc on occasion). Also note that non-standard codes
+	 * used to represent elements (such as using "COBALT" instead of "Co") do not matter, since they are consistent across both sides of the comparison. 
 	 * 
 	 * @return Returns true if reactants and products are elementally balanced, false if not.
 	 * Any errors or unreadable/missing formulas return false.
@@ -162,7 +170,7 @@ public class ReactionInstance {
 		
 		if (!reactantElements.keySet().containsAll(productElements.keySet()) || !productElements.keySet().containsAll(reactantElements.keySet())) return false;
 		for (String key : reactantElements.keySet()) {
-//			if (key.equalsIgnoreCase("H")) {
+//			if (key.equalsIgnoreCase("H")) { //TODO account for reactions which fail to match by commonly omitted elements
 //				if (reactantElements.get(key) - productElements.get(key) == 1 || reactantElements.get(key) - productElements.get(key) == -1) {
 //					System.out.println("Save reaction with a proton.");
 //				}
@@ -242,7 +250,7 @@ public class ReactionInstance {
 				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
-					ReactionInstance newReaction = new ReactionInstance(thisReactionFrame_, null, "", thisReactionFrame_.isReversible(), new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
+					ReactionInstance newReaction = new ReactionInstance(thisReactionFrame_, null, "", reversible_, specificLocation_, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
 					
 					// Non-generic metabolites
 					for (MetaboliteInstance reactant : nonGenericReactantMetabolites) {
@@ -447,6 +455,10 @@ public class ReactionInstance {
 		return orRule;
 	}
 	
+	/**
+	 * Overwrite existing reactants_ and products_ by looking up thisReactionFrame_ in the database and creating MetaboliteInstances for all
+	 * reactants and products found there for this reaction.
+	 */
 	@SuppressWarnings("unchecked")
 	private void initializeReactantProductMetaboliteInstances() {
 		reactants_ = new ArrayList<MetaboliteInstance>();
@@ -457,8 +469,7 @@ public class ReactionInstance {
 			ArrayList<String> reactantIDs = thisReactionFrame_.getSlotValues(reactantSlot_);
 			for (String reactantID : reactantIDs) {
 				Frame metabolite = Frame.load(conn, reactantID);
-				String compartment = conn.getValueAnnot(thisReactionFrame_.getLocalID(), reactantSlot_, reactantID, "COMPARTMENT");
-				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
+				String compartment = getCompartmentOfMetabolite(reactantID, reactantSlot_);
 				int coeficient = 1;
 				try {
 					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame_.getLocalID(), reactantSlot_, reactantID, "COEFFICIENT"));
@@ -471,8 +482,7 @@ public class ReactionInstance {
 			ArrayList<String> productIDs = thisReactionFrame_.getSlotValues(productSlot_);
 			for (String productID : productIDs) {
 				Frame metabolite = Frame.load(conn, productID);
-				String compartment = conn.getValueAnnot(thisReactionFrame_.getLocalID(), productSlot_, productID, "COMPARTMENT");
-				if (compartment.equalsIgnoreCase("NIL")) compartment = CycModeler.DefaultCompartment;
+				String compartment = getCompartmentOfMetabolite(productID, productSlot_);
 				int coeficient = 1;
 				try {
 					coeficient = Integer.parseInt(conn.getValueAnnot(thisReactionFrame_.getLocalID(), productSlot_, productID, "COEFFICIENT"));
@@ -484,6 +494,86 @@ public class ReactionInstance {
 		} catch (PtoolsErrorException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Warning: reactions that occur in multiple compartments should be separate reactions in the model. Otherwise, reactions with multiple locations will default
+	 * to the first location in the list. If no location is given for this reaction, then it defaults to the DefaultCompartment.  SpecificLocation setting
+	 * is only used to disambiguate the "duplicate" reactions that occur when a reaction has multiple locations.
+	 * 
+	 * @param metaboliteID
+	 * @param slot
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	protected String getCompartmentOfMetabolite(String metaboliteID, String slot) {
+		Reaction reaction = thisReactionFrame_;
+		String compartment = "";
+		try {
+			JavacycConnection conn = thisReactionFrame_.getConnection();
+			ArrayList<String> locations = reaction.getSlotValues("RXN-LOCATIONS");
+
+			if (locations.isEmpty()) {
+				compartment = CycModeler.DefaultCompartment;
+			} else if (locations.size() == 1) {
+				boolean isSpace;
+				try { 
+					isSpace = conn.instanceAllInstanceOfP("CCO-SPACE", locations.get(0));
+				} catch (PtoolsErrorException e) {
+					isSpace = false; // Throws an exception when the location is a "special symbol unique to this slot", in which case we treat it as a type T reaction
+				}
+				
+				if (isSpace) compartment = locations.get(0); // Since label is a child of CCO-SPACE, we treat this as a type S reaction according to EcoCyc
+				else {
+					// Label is a child of CCO-MEMBRANE, or a special symbol unique to this slot.  We treat these reactions as type T reactions according to EcoCyc
+					HashMap<String, String> labelMap = new HashMap<String, String>();
+					for (String label : conn.getAllAnnotLabels(reaction.getLocalID(), "RXN-LOCATIONS", locations.get(0))) {
+						labelMap.put(label, conn.getValueAnnot(reaction.getLocalID(), "RXN-LOCATIONS", locations.get(0), label));
+					}
+					
+					compartment = labelMap.get(conn.getValueAnnot(reaction.getLocalID(), slot, metaboliteID, "COMPARTMENT"));
+				}
+			} else {
+				// If there are multiple possible locations for this reactionInstance, only one can be processed.  We process the location that matches the
+				// specificLocation variable.  If specificLocation does not match, then we only process the first reaction location in the list.
+				// Reactions that occur in multiple compartments should be separate reactions.
+				int locationIndex;
+				if (specificLocation_ == null || specificLocation_.isEmpty() || locations.indexOf(specificLocation_) == -1) {
+					locationIndex = 0;
+					System.err.println("Location information expected by not provided.");
+				}
+				else locationIndex = locations.indexOf(specificLocation_);
+
+				boolean isSpace;
+				try { 
+					isSpace = conn.instanceAllInstanceOfP("CCO-SPACE", locations.get(locationIndex));
+				} catch (PtoolsErrorException e) {
+					isSpace = false; // Throws an exception when the location is a "special symbol unique to this slot", in which case we treat it as a type T reaction
+				}
+				
+				if (isSpace) compartment = locations.get(locationIndex); // Since label is a child of CCO-SPACE, we treat this as a type S reaction according to EcoCyc
+				else {
+					// Label is a child of CCO-MEMBRANE, or a special symbol unique to this slot.  We treat these reactions as type T reactions according to EcoCyc
+					HashMap<String, String> labelMap = new HashMap<String, String>();
+					for (String label : conn.getAllAnnotLabels(reaction.getLocalID(), "RXN-LOCATIONS", locations.get(locationIndex))) {
+						labelMap.put(label, conn.getValueAnnot(reaction.getLocalID(), "RXN-LOCATIONS", locations.get(locationIndex), label));
+					}
+					
+					compartment = labelMap.get(conn.getValueAnnot(reaction.getLocalID(), slot, metaboliteID, "COMPARTMENT"));
+				}
+			}
+		} catch (PtoolsErrorException e) {
+			e.printStackTrace();
+		}
+		
+		// For the sake of viability of the model, any metabolite that does not have compartment information is assumed to be in the cytoplasm.  While
+		// this may not always be correct, it helps more problems than it causes.  In particular, with electron transfer reactions, the actual location
+		// of the metabolite may be in the membrane, but we assume the cytoplasm for network connectivity reasons.
+		if (compartment == null || compartment.equalsIgnoreCase("")) {
+			compartment = CycModeler.DefaultCompartment;
+//			System.err.println("Null compartment here, assuming default compartment: " + reaction.getLocalID());
+		}
+		return compartment;
 	}
 	
 	

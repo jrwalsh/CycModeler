@@ -38,6 +38,7 @@ public class CycModeler {
 	static protected String BoundaryCompartmentName = "Boundary";
 	static protected String ExchangeReactionSuffix = "Exchange";
 	static protected String ModelName = "DefaultName";
+	static protected String ExternalCompartmentName = "CCO-EXTRACELLULAR";
 	
 	/**
 	 * Constructor: sets internal JavacycConnection object and initializes several default settings for generating models.
@@ -232,7 +233,7 @@ public class CycModeler {
 			// 2) Load all reactions
 			System.out.println("Loading all reactions ...");
 			ArrayList<Reaction> allReactions = Reaction.all(conn);
-			ReactionNetwork reactionNetwork = new ReactionNetwork(conn, reactionListToReactionInstances(allReactions));
+			ReactionNetwork reactionNetwork = ReactionNetwork.getReactionNetwork(conn, allReactions);
 			
 			// 3) Filter unwanted reactions
 			System.out.println("Filtering unwanted reactions ...");
@@ -245,15 +246,19 @@ public class CycModeler {
 			System.out.println("Instantiating generic reactions ...");
 			reactionNetwork.generateSpecificReactionsFromGenericReactions();
 			
-			// 5) Add boundaries
-			System.out.println("Adding boundary reactions ...");
-			reactionNetwork.addBoundaryReactionsByCompartment("CCO-OUT");
+			// 5) Add diffusion reactions
+			System.out.println("Adding diffusion reactions ...");
+			reactionNetwork.addPassiveDiffusionReactions("CCO-PERI-BAC" , "CCO-EXTRACELLULAR", (float) 610.00);
 			
-			// 6) Generate SBML model
+			// 6) Add boundaries
+			System.out.println("Adding boundary reactions ...");
+			reactionNetwork.addBoundaryReactionsByCompartment(ExternalCompartmentName);
+			
+			// 7) Generate SBML model
 			System.out.println("Generating SBML model ...");
 			generateSBMLModel(doc, reactionNetwork);
 			
-			// 7) Write revised model.
+			// 8) Write revised model.
 			System.out.println("Writing output ...");
 			SBMLWriter writer = new SBMLWriter();
 			writer.writeSBML(doc, OutputDirectory + "written_SBML.xml");
@@ -548,26 +553,6 @@ public class CycModeler {
 		}
 		
 		return doc;
-	}
-	
-	/**
-	 * Convert an ArrayList of JavaCycO Reaction objects into an ArrayList of ReactionInstances
-	 * 
-	 * @param reactions ArrayList of Reaction objects
-	 * @return ArrayList of ReactionInstance objects
-	 */
-	private ArrayList<ReactionInstance> reactionListToReactionInstances(ArrayList<Reaction> reactions) {
-		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
-		try {
-			for (Reaction reaction : reactions) {
-				ReactionInstance reactionInstance = new ReactionInstance(null, reaction, reaction.getCommonName(), reaction.isReversible());
-				reactionInstances.add(reactionInstance);
-			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		
-		return reactionInstances;
 	}
 	
 	

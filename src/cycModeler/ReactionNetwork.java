@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
+import edu.iastate.javacyco.Reaction;
 
 public class ReactionNetwork {
 	private JavacycConnection conn = null;
@@ -19,6 +20,16 @@ public class ReactionNetwork {
 	private int instantiatedReactions_ = 0;
 	private int boundaryMetabolitesFound_ = 0;
 	private int boundaryReactionsAdded_ = 0;
+	private int diffusionMetabolitesFound_ = 0;
+	private int diffusionReactionsAdded_ = 0;
+	private int newReactionsFromReactionsSplitByLocation = 0;
+	
+	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
+		ArrayList<ReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
+		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
+		reactionNetwork.newReactionsFromReactionsSplitByLocation = 0;
+		return reactionNetwork;
+	}
 	
 	public ReactionNetwork (JavacycConnection connection, ArrayList<ReactionInstance> reactions) {
 		conn = connection;
@@ -63,7 +74,7 @@ public class ReactionNetwork {
 			reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
 			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
 			products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
-			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, true, reactants, products));
+			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, true, null, reactants, products));
 		}
 		
 		reactions_.addAll(exchangeReactions);
@@ -73,6 +84,82 @@ public class ReactionNetwork {
 		}
 		
 		return exchangeReactions;
+	}
+	
+	/**
+	 * 
+	 * @param compartment1 Compartment to look for metabolites which might diffuse across a membrane
+	 * @param compartment2 Compartment into which metabolites will diffuse
+	 * @param maxSize Maximum size of metabolites that can freely diffuse. Any larger than this and they will be ignored. Size in daltons
+	 * @return
+	 */
+	public ArrayList<ReactionInstance> addPassiveDiffusionReactions(String compartment1, String compartment2, float maxSize) {
+		ArrayList<Frame> diffusionMetabolites = new ArrayList<Frame>();
+		ArrayList<String> diffusionMetaboliteIDs = new ArrayList<String>();
+		
+		assert reactions_ != null;
+		
+		// For each reaction, check for reactants or products which are consumed or produced in compartment1
+		for (ReactionInstance reaction : reactions_) {
+			for (MetaboliteInstance reactant : reaction.reactants_) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(reactant.metabolite_.getLocalID())) {
+					Float weight = (float) -1.0;
+					try {
+						String weightString = reactant.metabolite_.getSlotValue("MOLECULAR-WEIGHT");
+						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
+						weight = Float.parseFloat(weightString);
+					} catch (Exception e) {
+						try {
+							System.err.println(reactant.metabolite_.getCommonName() + " : " + reactant.metabolite_.getSlotValue("MOLECULAR-WEIGHT"));
+						} catch (PtoolsErrorException e1) {
+							e1.printStackTrace();
+						}
+					}
+					if (weight <= maxSize) {
+						diffusionMetabolites.add(reactant.metabolite_);
+						diffusionMetaboliteIDs.add(reactant.metabolite_.getLocalID());
+					}
+				}
+			}
+			for (MetaboliteInstance product : reaction.products_) {
+				if (product.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(product.metabolite_.getLocalID())) {
+					Float weight = (float) -1.0;
+					try {
+						String weightString = product.metabolite_.getSlotValue("MOLECULAR-WEIGHT");
+						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
+						weight = Float.parseFloat(weightString);
+					} catch (Exception e) {
+						try {
+							System.err.println(product.metabolite_.getCommonName() + " : " + product.metabolite_.getSlotValue("MOLECULAR-WEIGHT"));
+						} catch (PtoolsErrorException e1) {
+							e1.printStackTrace();
+						}
+					}
+					if (weight <= maxSize) {
+						diffusionMetabolites.add(product.metabolite_);
+						diffusionMetaboliteIDs.add(product.metabolite_.getLocalID());
+					}
+				}
+			}
+		}
+		
+		// Generate diffusion reactions
+		ArrayList<ReactionInstance> diffusionReactions = new ArrayList<ReactionInstance>();
+		for (Frame metabolite : diffusionMetabolites) {
+			ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
+			reactants.add(new MetaboliteInstance(metabolite, compartment1, 1));
+			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
+			products.add(new MetaboliteInstance(metabolite, compartment2, 1));
+			diffusionReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + "passiveDiffusionReaction", true, null, reactants, products));
+		}
+		
+		reactions_.addAll(diffusionReactions);
+		if (debug_) {
+			diffusionMetabolitesFound_ += diffusionMetabolites.size();
+			diffusionReactionsAdded_ += diffusionReactions.size();
+		}
+		
+		return diffusionReactions;
 	}
 	
 	/**
@@ -90,31 +177,6 @@ public class ReactionNetwork {
 //		}
 //		
 		return exchangeReactions;
-	}
-	
-	/**
-	 * TODO
-	 */
-	public void getSmallMetabolites() {
-		ArrayList<Frame> compounds;
-		try {
-			int count = 0;
-			compounds = conn.getAllGFPInstances("|Compounds|");
-			for (Frame compound : compounds) {
-				try {
-					String weight = compound.getSlotValue("MOLECULAR-WEIGHT");
-					if (Float.parseFloat(weight) <= 610.00) {
-						System.out.println(compound.getCommonName() + " : " + compound.getSlotValue("MOLECULAR-WEIGHT"));
-						count++;
-					}
-				} catch (Exception e) {
-					System.err.println(compound.getCommonName() + " : " + compound.getSlotValue("MOLECULAR-WEIGHT"));
-				}
-			}
-			System.out.println(count + "/" + compounds.size());
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	/**
@@ -201,6 +263,8 @@ public class ReactionNetwork {
 		System.out.println("Generic reactions found : " + genericReactionsFound_);
 		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated_);
 		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions_);
+		System.out.println("Diffusion metabolites found : " + diffusionMetabolitesFound_);
+		System.out.println("Diffusion reactions added : " + diffusionReactionsAdded_);
 		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound_);
 		System.out.println("Exchange reactions added : " + boundaryReactionsAdded_);
 		System.out.println("Total transport reactions in network (excluding exchange and diffusion): " + countTransportReactions());
@@ -225,6 +289,33 @@ public class ReactionNetwork {
 			e.printStackTrace();
 		}
 		return transportReactionCount;
+	}
+	
+	/**
+	 * Convert an ArrayList of JavaCycO Reaction objects into an ArrayList of ReactionInstances
+	 * 
+	 * @param reactions ArrayList of Reaction objects
+	 * @return ArrayList of ReactionInstance objects
+	 */
+	@SuppressWarnings("unchecked")
+	private static ArrayList<ReactionInstance> reactionListToReactionInstances(ArrayList<Reaction> reactions) {
+		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
+		for (Reaction reaction : reactions) {
+			try {
+				ArrayList<String> locations = reaction.getSlotValues("RXN-LOCATIONS");
+				if (locations.size() > 1) {
+					//System.err.println("Split " + reaction.getLocalID() + " into " + (locations.size()));
+					//if (debug_) newReactionsFromReactionsSplitByLocation += locations.size()-1;
+					for (String location : locations) {
+						reactionInstances.add(new ReactionInstance(null, reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
+					}
+				} else reactionInstances.add(new ReactionInstance(reaction));
+			} catch (PtoolsErrorException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return reactionInstances;
 	}
 	
 	
