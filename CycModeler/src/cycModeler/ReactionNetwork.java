@@ -51,7 +51,7 @@ public class ReactionNetwork {
 		
 		assert reactions_ != null;
 		
-		// For each reaction, check for reactants or products which are consumed or produced in compartment
+		// For each reaction, check for reactants or products which are consumed or produced in boundary compartment
 		for (ReactionInstance reaction : reactions_) {
 			for (MetaboliteInstance reactant : reaction.reactants_) {
 				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.metabolite_.getLocalID())) {
@@ -70,11 +70,11 @@ public class ReactionNetwork {
 		// Generate exchange reactions
 		ArrayList<ReactionInstance> exchangeReactions = new ArrayList<ReactionInstance>();
 		for (Frame metabolite : exchangeMetabolites) {
-			ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
-			reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
-			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
-			products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
-			exchangeReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, true, null, reactants, products));
+//			ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
+//			reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
+//			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
+//			products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
+			exchangeReactions.add(new ExchangeReactionInstance(metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, metabolite, compartment));
 		}
 		
 		reactions_.addAll(exchangeReactions);
@@ -150,7 +150,8 @@ public class ReactionNetwork {
 			reactants.add(new MetaboliteInstance(metabolite, compartment1, 1));
 			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
 			products.add(new MetaboliteInstance(metabolite, compartment2, 1));
-			diffusionReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + "passiveDiffusionReaction", true, null, reactants, products));
+//			diffusionReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + "passiveDiffusionReaction", true, null, reactants, products));
+			diffusionReactions.add(new DiffusionReactionInstance(metabolite.getLocalID() + "_" + "passiveDiffusionReaction", reactants, products));
 		}
 		
 		reactions_.addAll(diffusionReactions);

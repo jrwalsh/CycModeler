@@ -37,10 +37,6 @@ public class ReactionInstance {
 		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, null, null, true);
 	}
 	
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
-		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, reactants, products, false);
-	}
-	
 	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products, boolean initializeReactantsProducts) {
 		parentReaction_ = parentReactionFrame;
 		thisReactionFrame_ = thisReactionFrame;
@@ -250,7 +246,7 @@ public class ReactionInstance {
 				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
-					ReactionInstance newReaction = new ReactionInstance(thisReactionFrame_, null, "", reversible_, specificLocation_, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
+					ReactionInstance newReaction = new InstantiatedReactionInstance(thisReactionFrame_, "", reversible_, specificLocation_, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
 					
 					// Non-generic metabolites
 					for (MetaboliteInstance reactant : nonGenericReactantMetabolites) {
@@ -540,7 +536,7 @@ public class ReactionInstance {
 				int locationIndex;
 				if (specificLocation_ == null || specificLocation_.isEmpty() || locations.indexOf(specificLocation_) == -1) {
 					locationIndex = 0;
-					System.err.println("Location information expected by not provided.");
+					System.err.println("Location information expected but not provided.");
 				}
 				else locationIndex = locations.indexOf(specificLocation_);
 
