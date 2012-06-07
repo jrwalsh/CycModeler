@@ -21,3 +21,19 @@ Compartment concerns: (http://ecocyc.org/PGDBConceptsGuide.shtml#node_sec_3.6)
     It would seem that the members of the Electron-Transfer-Reactions class have reactant/product pairs that are "in the membrane"??? Since the membrane is
     not a child of space, no CCO-SPACE term is given.  This leads to the choice of assuming null compartment, default compartment, or making a new compartment
     for the membrane itself.
+    
+Protein based reaction not filtered by no protein reaction filter, gets through with no substrate or product
+	DSBBPROT-RXN
+
+One of these reactions cannot be elementally balanced:
+	Carnitine-CoA Ligase Reaction
+	Equation: atp + coa + crn --> adp + crncoa + pi
+	Gene: b0037
+
+	Carnitine Degradation I
+	Equation: atp + coa + crn --> amp + crncoa + ppi
+	Gene: b0037
+
+
+**
+CPD0-2298

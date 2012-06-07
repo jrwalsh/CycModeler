@@ -83,7 +83,7 @@ public class Main {
 		String configFile = args[0];
 		
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(connectionStringTHTServer,defaultPort);
+		conn = new JavacycConnection(connectionStringLocal,defaultPort);
 		conn.selectOrganism(organismStringK12);
 		run(configFile);
 		Long stop = System.currentTimeMillis();
