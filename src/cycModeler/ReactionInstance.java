@@ -25,18 +25,21 @@ public class ReactionInstance {
 	public String productSlot_;
 	public String specificLocation_;
 	
+	// Used when converting javacyco reactions to cycmodeler reaction instances
 	public ReactionInstance(Reaction thisReactionFrame) throws PtoolsErrorException {
 		this(null, thisReactionFrame, thisReactionFrame.getCommonName(), thisReactionFrame.isReversible(), null, null, null, true);
 	}
 	
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible) {
-		this(parentReactionFrame, thisReactionFrame, name, reversible, null, null, null, true);
-	}
+//	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible) {
+//		this(parentReactionFrame, thisReactionFrame, name, reversible, null, null, null, true);
+//	}
 	
+	// Also used when converting javacyco reactions to cycmodeler reaction instances
 	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation) {
 		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, null, null, true);
 	}
 	
+	// The "all included" constructor
 	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products, boolean initializeReactantsProducts) {
 		parentReaction_ = parentReactionFrame;
 		thisReactionFrame_ = thisReactionFrame;
