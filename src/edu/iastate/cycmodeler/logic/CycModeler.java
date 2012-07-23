@@ -19,7 +19,6 @@ import edu.iastate.javacyco.*;
 
 /**
  * CycModeler is a class that is designed to generate a stoichiometric model in SBML output from a BioCyc database.
- * This class is built around the JavaCycO class created by John Van Hemert.
  * 
  * Generates genome-scale models in which the entire EcoCyc reaction network is exported to SBML, at which point 
  * it is read in by this class and manipulated into a feasible stoichiometric model. Includes methods to add boundary

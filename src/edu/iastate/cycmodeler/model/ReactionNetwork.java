@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.Report;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
@@ -14,22 +15,12 @@ public class ReactionNetwork {
 	public ArrayList<ReactionInstance> reactions_;
 
 	// Network modification statistics
+	private Report report;
 	private boolean debug_ = true;
-	private int totalStartingReactions_ = 0;
-	private int filteredReactions_ = 0;
-	private int genericReactionsFound_ = 0;
-	private int genericReactionsInstantiated_ = 0;
-	private int instantiatedReactions_ = 0;
-	private int boundaryMetabolitesFound_ = 0;
-	private int boundaryReactionsAdded_ = 0;
-	private int diffusionMetabolitesFound_ = 0;
-	private int diffusionReactionsAdded_ = 0;
-	private int newReactionsFromReactionsSplitByLocation = 0;
 	
 	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
 		ArrayList<ReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
 		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
-		reactionNetwork.newReactionsFromReactionsSplitByLocation = 0;
 		return reactionNetwork;
 	}
 	
@@ -37,7 +28,8 @@ public class ReactionNetwork {
 		conn = connection;
 		reactions_ = reactions;
 		
-		if (debug_) totalStartingReactions_ += reactions.size();
+		report = new Report();
+		report.setTotalInitialReactionsCount(reactions.size());
 	}
 	
 	/**
@@ -80,10 +72,9 @@ public class ReactionNetwork {
 		}
 		
 		reactions_.addAll(exchangeReactions);
-		if (debug_) {
-			boundaryMetabolitesFound_ += exchangeMetabolites.size();
-			boundaryReactionsAdded_ += exchangeReactions.size();
-		}
+		
+		report.setBoundaryMetabolitesFound(exchangeMetabolites.size());
+		report.setBoundaryReactionsAdded(exchangeReactions.size());
 		
 		return exchangeReactions;
 	}
@@ -157,10 +148,9 @@ public class ReactionNetwork {
 		}
 		
 		reactions_.addAll(diffusionReactions);
-		if (debug_) {
-			diffusionMetabolitesFound_ += diffusionMetabolites.size();
-			diffusionReactionsAdded_ += diffusionReactions.size();
-		}
+		
+		report.setDiffusionMetabolitesFound(diffusionMetabolites.size());
+		report.setDiffusionReactionsAdded(diffusionReactions.size());
 		
 		return diffusionReactions;
 	}
@@ -216,7 +206,7 @@ public class ReactionNetwork {
 		}
 		
 		reactions_ = keepList;
-		if (debug_) filteredReactions_ += removedList.size();
+		report.setFilteredReactions(removedList.size());
 		
 		return new FilterResults(keepList, removedList);
 	}
@@ -250,28 +240,30 @@ public class ReactionNetwork {
 		
 		reactions_ = instantiationResults.nonGenericReaction;
 		reactions_.addAll(instantiationResults.instantiatedReactions);
-		if (debug_) {
-			genericReactionsFound_ += instantiationResults.genericReactionsFound.size();
-			genericReactionsInstantiated_ += instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size();
-			instantiatedReactions_ += instantiationResults.instantiatedReactions.size();
-		}
+		
+		report.setGenericReactionsFound(instantiationResults.genericReactionsFound.size());
+		report.setGenericReactionsInstantiated(instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size());
+		report.setInstantiatedReactions(instantiationResults.instantiatedReactions.size());
 		
 		return instantiationResults;
 	}
 	
 	public void printNetworkStatistics() {
-		System.out.println("Writing statistics ...");
-		System.out.println("All reactions : " + totalStartingReactions_);
-		System.out.println("Removed reactions due to filtering : " + filteredReactions_);
-		System.out.println("Generic reactions found : " + genericReactionsFound_);
-		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated_);
-		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions_);
-		System.out.println("Diffusion metabolites found : " + diffusionMetabolitesFound_);
-		System.out.println("Diffusion reactions added : " + diffusionReactionsAdded_);
-		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound_);
-		System.out.println("Exchange reactions added : " + boundaryReactionsAdded_);
-		System.out.println("Total transport reactions in network (excluding exchange and diffusion): " + countTransportReactions());
-		System.out.println("Total reactions in network: " + reactions_.size());
+		report.setTransportReactions(countTransportReactions());
+		report.setTotalReactions(reactions_.size());
+		System.out.println(report.report());
+//		System.out.println("Writing statistics ...");
+//		System.out.println("All reactions : " + totalStartingReactions_);
+//		System.out.println("Removed reactions due to filtering : " + filteredReactions_);
+//		System.out.println("Generic reactions found : " + genericReactionsFound_);
+//		System.out.println("Generic reactions instantiated : " + genericReactionsInstantiated_);
+//		System.out.println("New reactions from generic reaction instantiations : " + instantiatedReactions_);
+//		System.out.println("Diffusion metabolites found : " + diffusionMetabolitesFound_);
+//		System.out.println("Diffusion reactions added : " + diffusionReactionsAdded_);
+//		System.out.println("Boundary metabolites found : " + boundaryMetabolitesFound_);
+//		System.out.println("Exchange reactions added : " + boundaryReactionsAdded_);
+//		System.out.println("Total transport reactions in network (excluding exchange and diffusion): " + countTransportReactions());
+//		System.out.println("Total reactions in network: " + reactions_.size());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -321,6 +313,43 @@ public class ReactionNetwork {
 		return reactionInstances;
 	}
 	
+	private void addBiomassEquation() {
+		//TODO
+	}
+	
+	private void addATPMaintenanceEquation() {
+		//TODO
+//		<reaction id="R_ATPM" name="ATP maintenance requirement" reversible="false">
+//		<notes>
+//		<html:p>Abbreviation: R_ATPM</html:p>
+//		<html:p>Synonyms: _0</html:p>
+//		<html:p>SUBSYSTEM: Unassigned</html:p>
+//		<html:p>Equation: [c] : atp + h2o --&gt; adp + h + pi</html:p>
+//		<html:p>Confidence Level: 0</html:p>
+//		<html:p>GENE ASSOCIATION: </html:p>
+//		</notes>
+//		<listOfReactants>
+//		<speciesReference species="M_atp_c" stoichiometry="1"/>
+//		<speciesReference species="M_h2o_c" stoichiometry="1"/>
+//		</listOfReactants>
+//		<listOfProducts>
+//		<speciesReference species="M_adp_c" stoichiometry="1"/>
+//		<speciesReference species="M_h_c" stoichiometry="1"/>
+//		<speciesReference species="M_pi_c" stoichiometry="1"/>
+//		</listOfProducts>
+//		<kineticLaw>
+//		<math xmlns="http://www.w3.org/1998/Math/MathML">
+//		<ci>FLUX_VALUE</ci>
+//		</math>
+//		<listOfParameters>
+//		<parameter id="LOWER_BOUND" value="8.39" units="mmol_per_gDW_per_hr"/>
+//		<parameter id="UPPER_BOUND" value="8.39" units="mmol_per_gDW_per_hr"/>
+//		<parameter id="OBJECTIVE_COEFFICIENT" value="0" />
+//		<parameter id="FLUX_VALUE" value="0" units="mmol_per_gDW_per_hr"/>
+//		</listOfParameters>
+//		</kineticLaw>
+//		</reaction>
+	}
 	
 	// Internal Classes
 	/**

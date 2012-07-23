@@ -1,6 +1,7 @@
 package edu.iastate.cycmodeler;
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.Globals;
 import edu.iastate.javacyco.JavacycConnection;
 
 /**
@@ -11,13 +12,6 @@ import edu.iastate.javacyco.JavacycConnection;
  */
 
 public class Main {
-	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
-	static public String connectionStringEcoServer =  "ecoserver.vrac.iastate.edu";
-	static public String connectionStringTHTServer =  "tht.vrac.iastate.edu";
-	static public String organismStringK12 =  "ECOLI"; //Built-in K12 model
-	static public String organismStringCBIRC =  "CBIRC"; //CBiRC E. coli model
-	static public int defaultPort =  4444;
-	
 	static private JavacycConnection conn = null;
 	
 	static {
@@ -84,8 +78,8 @@ public class Main {
 		String configFile = args[0];
 		
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(connectionStringLocal,defaultPort);
-		conn.selectOrganism(organismStringK12);
+		conn = new JavacycConnection(Globals.connectionStringLocal,Globals.defaultPort);
+		conn.selectOrganism(Globals.organismStringK12);
 		run(configFile);
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
