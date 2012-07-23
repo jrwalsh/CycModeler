@@ -7,19 +7,13 @@ import org.sbml.libsbml.SBMLDocument;
 import org.sbml.libsbml.SBMLWriter;
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.Globals;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
 public class Test {
-	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
-	static public String connectionStringEcoServer =  "ecoserver.vrac.iastate.edu";
-	static public String connectionStringTHTServer =  "tht.vrac.iastate.edu";
-	static public String organismStringK12 =  "ECOLI"; //Built-in K12 model
-	static public String organismStringCBIRC =  "CBIRC"; //CBiRC E. coli model
-	static public int defaultPort =  4444;
-	
 	static private JavacycConnection conn = null;
 	
 	static {
@@ -76,8 +70,8 @@ public class Test {
 	public static void main(String[] args) {
 		System.out.println("TESTING MODE");
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(connectionStringTHTServer,defaultPort);
-		conn.selectOrganism(organismStringK12);
+		conn = new JavacycConnection(Globals.connectionStringTHTServer,Globals.defaultPort);
+		conn.selectOrganism(Globals.organismStringK12);
 		test();
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
