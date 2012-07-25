@@ -8,9 +8,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.sbml.libsbml.*;
 
+import edu.iastate.cycmodeler.model.AbstractReactionInstance;
+import edu.iastate.cycmodeler.model.InstantiatedReactionInstance;
 import edu.iastate.cycmodeler.model.MetaboliteInstance;
 import edu.iastate.cycmodeler.model.ReactionInstance;
 import edu.iastate.cycmodeler.model.ReactionNetwork;
@@ -291,17 +294,17 @@ public class CycModeler {
 		Model model = doc.getModel();
 		ArrayList<String> metabolites = new ArrayList<String>();
 		ArrayList<String> compartments = new ArrayList<String>();
-		ArrayList<ReactionInstance> reactionInstances = reactionNetwork.reactions_;
+		HashSet<AbstractReactionInstance> reactionInstances = reactionNetwork.Reactions;
 		
 		// Get mappings to iAF1260
 //		HashMap<String, ArrayList<String>> map = readMap("/home/Jesse/output/e2p");
 		
 		try {
 			// Create compartment list
-			for (ReactionInstance reaction : reactionInstances) {
+			for (AbstractReactionInstance reaction : reactionInstances) {
 				ArrayList<MetaboliteInstance> reactantsProducts = new ArrayList<MetaboliteInstance>();
-				reactantsProducts.addAll(reaction.reactants_);
-				reactantsProducts.addAll(reaction.products_);
+				reactantsProducts.addAll(reaction.Reactants);
+				reactantsProducts.addAll(reaction.Products);
 				for (MetaboliteInstance species : reactantsProducts) {
 					if (!compartments.contains(species.compartment_)) {
 						Compartment compartment = model.createCompartment();
@@ -315,16 +318,16 @@ public class CycModeler {
 			}
 			
 			// Create species list
-			for (ReactionInstance reaction : reactionInstances) {
+			for (AbstractReactionInstance reaction : reactionInstances) {
 				ArrayList<MetaboliteInstance> reactantsProducts = new ArrayList<MetaboliteInstance>();
-				reactantsProducts.addAll(reaction.reactants_);
-				reactantsProducts.addAll(reaction.products_);
+				reactantsProducts.addAll(reaction.Reactants);
+				reactantsProducts.addAll(reaction.Products);
 				for (MetaboliteInstance species : reactantsProducts) {
 					if (!metabolites.contains(species.generateSpeciesID())) {
 						Species newSpecies = model.createSpecies();
 						String sid = species.generateSpeciesID();
 						newSpecies.setId(sid);
-						newSpecies.setName(species.metabolite_.getCommonName());
+						newSpecies.setName(species.MetaboliteFrame.getCommonName());
 						newSpecies.setCompartment(model.getCompartment(convertToSBMLSafe(species.compartment_)).getId());
 						newSpecies.setBoundaryCondition(false);
 //						if (newSpecies.setId(sid) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
@@ -335,20 +338,21 @@ public class CycModeler {
 						
 						// Append Notes
 						newSpecies.appendNotes("Palsson SID : \n");
-						newSpecies.appendNotes("EcoCyc Frame ID : " + species.metabolite_.getLocalID() + "\n");
+						newSpecies.appendNotes("EcoCyc Frame ID : " + species.MetaboliteFrame.getLocalID() + "\n");
 						newSpecies.appendNotes("Chemical Formula : " + "\n");
 					}
 				}
 			}
 			
 			// Create reaction list
-			for (ReactionInstance reaction : reactionInstances) {
+			for (AbstractReactionInstance reaction : reactionInstances) {
 				org.sbml.libsbml.Reaction newReaction = model.createReaction();
-				if (reaction.thisReactionFrame_ != null) newReaction.setId(reaction.generateReactionID());
-				else if (reaction.parentReaction_ != null) newReaction.setId(reaction.generateReactionID());
-				else newReaction.setId(reaction.generateReactionID());
-				newReaction.setName(reaction.name_);
-				newReaction.setReversible(reaction.reversible_);
+				newReaction.setId(reaction.generateReactionID());
+//				if (reaction.ReactionFrame != null) newReaction.setId(reaction.generateReactionID());
+//				else if (reaction.parentReaction_ != null) newReaction.setId(reaction.generateReactionID());
+//				else newReaction.setId(reaction.generateReactionID());
+				newReaction.setName(reaction.Name);
+				newReaction.setReversible(reaction.Reversible);
 //				if (reaction.thisReactionFrame != null) {
 //					if (newReaction.setId(convertToSBMLSafe(reaction.thisReactionFrame.getLocalID())) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //				} else if (reaction.parentReaction != null) {
@@ -358,7 +362,7 @@ public class CycModeler {
 //				}
 //				if (newReaction.setName(reaction.name) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 				
-				for (MetaboliteInstance reactant : reaction.reactants_) {
+				for (MetaboliteInstance reactant : reaction.Reactants) {
 					String sid = reactant.generateSpeciesID();
 					SpeciesReference ref = newReaction.createReactant();
 					ref.setSpecies(sid);
@@ -367,7 +371,7 @@ public class CycModeler {
 //					if (ref.setStoichiometry(reactant.stoichiometry) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 //					if (newReaction.addReactant(ref) != libsbml.LIBSBML_OPERATION_SUCCESS) throw new Exception();
 				}
-				for (MetaboliteInstance product : reaction.products_) {
+				for (MetaboliteInstance product : reaction.Products) {
 					String sid = product.generateSpeciesID();
 					SpeciesReference ref = newReaction.createProduct();
 					ref.setSpecies(sid);
@@ -419,8 +423,10 @@ public class CycModeler {
 				newReaction.appendNotes("SUBSYSTEM : \n");
 				newReaction.appendNotes("Equation : \n");
 				newReaction.appendNotes("Confidence Level : \n");
-				if (reaction.thisReactionFrame_ != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reactionGeneRule(reaction.thisReactionFrame.getLocalID(), false));
-				else if (reaction.parentReaction_ != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reaction.reactionGeneRule(reaction.parentReaction.getLocalID(), false));
+//				if (reaction.ReactionFrame != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reactionGeneRule(reaction.thisReactionFrame.getLocalID(), false));
+//				else if (reaction.parentReaction_ != null) newReaction.appendNotes("Gene Rule : " + reaction.reactionGeneRule(false));//reaction.reactionGeneRule(reaction.parentReaction.getLocalID(), false));
+				if (reaction instanceof ReactionInstance) newReaction.appendNotes("Gene Rule : " + ((ReactionInstance)reaction).reactionGeneRule(false));
+				else if (reaction instanceof InstantiatedReactionInstance) newReaction.appendNotes("Gene Rule : " + ((InstantiatedReactionInstance)reaction).reactionGeneRule(false));
 				else newReaction.appendNotes("Gene Rule : ");
 			}
 		} catch (PtoolsErrorException e) {
@@ -531,33 +537,33 @@ public class CycModeler {
 	
 	
 	// *** SANDBOX *** \\
-	private void printBoundaryReactionMetaboliteList(ArrayList<ReactionInstance> reactions, String fileName) {
-		String outString = "";
-		try {
-			for (ReactionInstance reaction : reactions) {
-				if (reaction.reactants_.size() > 0) {
-					Frame m = reaction.reactants_.get(0).metabolite_;
-					outString += m.getLocalID() + "\t" + m.getCommonName() + "\t" + reaction.reactants_.get(0).chemicalFormula_ + "\t";
-					
-					String keggID = "";
-					ArrayList dblinks = null;
-					if (m.hasSlot("DBLINKS")) dblinks = m.getSlotValues("DBLINKS");
-					for (Object dblink : dblinks) {
-						ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
-						if (dbLinkArray.get(0).contains("LIGAND-CPD")) {
-							keggID += dbLinkArray.get(1).replace("\"", "") + "\t";
-						}
-					}
-					keggID = keggID.split("\t")[0]; // Many kegg id entries are duplicated in EcoCyc v15.0, but we only need one
-					outString += keggID + "\n";
-				}
-			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		
-		printString(OutputDirectory + fileName, outString);
-	}
+//	private void printBoundaryReactionMetaboliteList(ArrayList<ReactionInstance> reactions, String fileName) {
+//		String outString = "";
+//		try {
+//			for (ReactionInstance reaction : reactions) {
+//				if (reaction.Reactants.size() > 0) {
+//					Frame m = reaction.Reactants.get(0).MetaboliteFrame;
+//					outString += m.getLocalID() + "\t" + m.getCommonName() + "\t" + reaction.Reactants.get(0).chemicalFormula_ + "\t";
+//					
+//					String keggID = "";
+//					ArrayList dblinks = null;
+//					if (m.hasSlot("DBLINKS")) dblinks = m.getSlotValues("DBLINKS");
+//					for (Object dblink : dblinks) {
+//						ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
+//						if (dbLinkArray.get(0).contains("LIGAND-CPD")) {
+//							keggID += dbLinkArray.get(1).replace("\"", "") + "\t";
+//						}
+//					}
+//					keggID = keggID.split("\t")[0]; // Many kegg id entries are duplicated in EcoCyc v15.0, but we only need one
+//					outString += keggID + "\n";
+//				}
+//			}
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		
+//		printString(OutputDirectory + fileName, outString);
+//	}
 	
 	
 	// Internal Classes

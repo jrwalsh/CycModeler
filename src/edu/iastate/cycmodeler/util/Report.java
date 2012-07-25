@@ -37,54 +37,44 @@ public class Report {
 		this.totalInitialReactionsCount = totalStartingReactionsCount;
 	}
 	
-	public void setFilteredReactions(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setFilteredReactions(int i) {
+		filteredReactions = i;
 	}
 
-	public void setGenericReactionsFound(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setGenericReactionsFound(int i) {
+		genericReactionsFound = i;
 	}
 
 	public void setGenericReactionsInstantiated(int i) {
-		// TODO Auto-generated method stub
-		
+		genericReactionsInstantiated = i;
 	}
 
-	public void setInstantiatedReactions(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setInstantiatedReactions(int i) {
+		instantiatedReactions = i;
 	}
 
-	public void setBoundaryMetabolitesFound(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setBoundaryMetabolitesFound(int i) {
+		boundaryMetabolitesFound = i;
 	}
 
-	public void setBoundaryReactionsAdded(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setBoundaryReactionsAdded(int i) {
+		boundaryReactionsAdded = i;
 	}
 
-	public void setDiffusionMetabolitesFound(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setDiffusionMetabolitesFound(int i) {
+		diffusionMetabolitesFound = i;
 	}
 
-	public void setDiffusionReactionsAdded(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setDiffusionReactionsAdded(int i) {
+		diffusionReactionsAdded = i;
 	}
 
-	public void setTransportReactions(int countTransportReactions) {
-		// TODO Auto-generated method stub
-		
+	public void setTransportReactions(int i) {
+		transportReactions = i;
 	}
 
-	public void setTotalReactions(int size) {
-		// TODO Auto-generated method stub
-		
+	public void setTotalReactions(int i) {
+		totalReactions = i;
 	}
 	
 	public String report() {

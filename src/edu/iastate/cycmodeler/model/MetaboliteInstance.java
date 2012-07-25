@@ -13,7 +13,7 @@ import edu.iastate.javacyco.PtoolsErrorException;
  * @author Jesse Walsh
  */
 public class MetaboliteInstance {
-	public Frame metabolite_;
+	public Frame MetaboliteFrame;
 	public String compartment_;
 	public int coefficient_;
 	public String chemicalFormula_;
@@ -27,7 +27,7 @@ public class MetaboliteInstance {
 	 * @param coefficient
 	 */
 	public MetaboliteInstance(Frame metabolite, String compartment, int coefficient) {
-		metabolite_ = metabolite;
+		MetaboliteFrame = metabolite;
 		compartment_ = compartment;
 		coefficient_ = coefficient;
 		chemicalFormula_ = fetchChemicalFormula();
@@ -49,8 +49,8 @@ public class MetaboliteInstance {
 	private String fetchChemicalFormula() {
 		String chemicalFormula = "";
 		try {
-			if (!metabolite_.hasSlot("CHEMICAL-FORMULA")) return "";
-			for (Object o : metabolite_.getSlotValues("CHEMICAL-FORMULA")) {
+			if (!MetaboliteFrame.hasSlot("CHEMICAL-FORMULA")) return "";
+			for (Object o : MetaboliteFrame.getSlotValues("CHEMICAL-FORMULA")) {
 				String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 				String element = chemicalFormulaElement.split(",")[0];
 				Integer quantity = 1;
@@ -83,8 +83,8 @@ public class MetaboliteInstance {
 		String keggID = "";
 		try {
 			ArrayList<String> dblinks = null;
-			if (metabolite_.hasSlot("DBLINKS") && metabolite_.getSlotValues("DBLINKS") != null) {
-				dblinks = metabolite_.getSlotValues("DBLINKS");
+			if (MetaboliteFrame.hasSlot("DBLINKS") && MetaboliteFrame.getSlotValues("DBLINKS") != null) {
+				dblinks = MetaboliteFrame.getSlotValues("DBLINKS");
 			
 				for (Object dblink : dblinks) {
 					ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
@@ -108,12 +108,37 @@ public class MetaboliteInstance {
 	 * @return
 	 */
 	public String generateSpeciesID() {
-		String baseID = metabolite_.getLocalID();
+		String baseID = MetaboliteFrame.getLocalID();
 		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment_));
 		else return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "_" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment_));
 	}
 	
-	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((MetaboliteFrame == null) ? 0 : MetaboliteFrame.getLocalID().hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MetaboliteInstance other = (MetaboliteInstance) obj;
+		if (MetaboliteFrame == null) {
+			if (other.MetaboliteFrame != null)
+				return false;
+		} else if (!MetaboliteFrame.getLocalID().equals(other.MetaboliteFrame.getLocalID()))
+			return false;
+		return true;
+	}
+
 	// Internal Classes
 	/**
 	 * Enum class which represents element codes used in EcoCyc.  Most two-letter elements are not listed with a capital first letter and lowercase second.

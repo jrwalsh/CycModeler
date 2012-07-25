@@ -1,6 +1,7 @@
 package edu.iastate.cycmodeler.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
@@ -16,26 +17,34 @@ import edu.iastate.javacyco.Reaction;
  * 
  * @author Jesse Walsh
  */
-public class ExchangeReactionInstance extends ReactionInstance {
+public class ExchangeReactionInstance extends AbstractReactionInstance {
 
 	public ExchangeReactionInstance(String reactionName, Frame metabolite, String compartment) {
-		super(null, null, reactionName, true, null, null, null, false);
-		ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
+		this.Name = reactionName;
+		this.Reversible = true;
+		this.ReactionLocation = compartment;
+		
+		HashSet<MetaboliteInstance> reactants = new HashSet<MetaboliteInstance>();
 		reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
-		ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
+		HashSet<MetaboliteInstance> products = new HashSet<MetaboliteInstance>();
 		products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
-		super.reactants_ = reactants;
-		super.products_ = products;		
+		this.Reactants = reactants;
+		this.Products = products;
+		
+//		super(null, null, reactionName, true, null, null, null, false);
+//		HashSet<MetaboliteInstance> reactants = new HashSet<MetaboliteInstance>();
+//		reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
+//		HashSet<MetaboliteInstance> products = new HashSet<MetaboliteInstance>();
+//		products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
+//		super.Reactants = reactants;
+//		super.Products = products;
 	}
 	
 	/**
 	 * The convention in the iAF1260 model is to add the suffix "_LPAREN_e_RPAREN_" to the end of reaction IDs for exchange reactions.
 	 */
 	public String generateReactionID() {
-		String baseID = "";
-		if (thisReactionFrame_ != null) baseID = thisReactionFrame_.getLocalID();
-		else if (parentReaction_ != null) baseID = parentReaction_.getLocalID();
-		else baseID = name_;
+		String baseID = Name;
 		
 		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
 		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
@@ -46,5 +55,17 @@ public class ExchangeReactionInstance extends ReactionInstance {
 	 */
 	public String reactionGeneRule(boolean asBNumber) throws PtoolsErrorException {
 		return "";
+	}
+
+	@Override
+	protected void addReactant(MetaboliteInstance reactant) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void addProduct(MetaboliteInstance product) {
+		// TODO Auto-generated method stub
+		
 	}
 }

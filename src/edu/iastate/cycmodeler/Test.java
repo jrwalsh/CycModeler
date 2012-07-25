@@ -1,12 +1,16 @@
 package edu.iastate.cycmodeler;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.TreeSet;
 
 import org.sbml.libsbml.SBMLDocument;
 import org.sbml.libsbml.SBMLWriter;
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.model.MetaboliteInstance;
+import edu.iastate.cycmodeler.model.ReactionInstance;
+import edu.iastate.cycmodeler.model.ReactionNetwork;
 import edu.iastate.cycmodeler.util.Globals;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
@@ -80,10 +84,30 @@ public class Test {
 	
 	public static void test() {
 		try {
+			HashSet<MetaboliteInstance> m1 = new HashSet<MetaboliteInstance>();
+			HashSet<MetaboliteInstance> m2 = new HashSet<MetaboliteInstance>();
+			HashSet<MetaboliteInstance> m3 = new HashSet<MetaboliteInstance>();
+			HashSet<MetaboliteInstance> m4 = new HashSet<MetaboliteInstance>();
+			m1.add(new MetaboliteInstance(Frame.load(conn, "FRUCTOSE-6P"), "Here", 1));
+			m2.add(new MetaboliteInstance(Frame.load(conn, "FRUCTOSE-16-DIPHOSPHATE"), "Here", 1));
+			m3.add(new MetaboliteInstance(Frame.load(conn, "FRUCTOSE-6P"), "Here", 1));
+			m4.add(new MetaboliteInstance(Frame.load(conn, "ADP"), "Here", 1));
 			
-			for (Object s : conn.callFuncArray("all-transported-chemicals :to-compartment 'CCO-EXTRACELLULAR")) {
-				System.out.println(s.toString());
-			}
+			System.out.println(m1.equals(m3));
+			System.out.println(m1.equals(m2));
+			
+			ReactionInstance ri = new ReactionInstance((Reaction)Frame.load(conn, "RXN0-6541"), (Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m1, m2, false);
+			ReactionInstance ri2 = new ReactionInstance((Reaction)Frame.load(conn, "6PFRUCTPHOS-RXN"), (Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m3, m4, false);
+			HashSet<ReactionInstance> set = new HashSet<ReactionInstance>();
+			set.add(ri);
+			set.add(ri2);
+			System.out.println(ri.equals(ri2));
+			System.out.println(set.size());
+			
+			
+//			for (Object s : conn.callFuncArray("all-transported-chemicals :to-compartment 'CCO-EXTRACELLULAR")) {
+//				System.out.println(s.toString());
+//			}
 			
 			
 //			int count = 0;
