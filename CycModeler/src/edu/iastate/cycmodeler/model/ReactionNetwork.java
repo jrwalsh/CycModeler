@@ -1,6 +1,7 @@
 package edu.iastate.cycmodeler.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
@@ -10,26 +11,32 @@ import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
+/*
+ * The reaction network class shall maintain validity of the underlying model itself.  This means that it shall not allow unbalanced reactions,
+ * generic reactions, duplicate reactions, or duplicate identifiers.  Validity specific to the SBML model itself, such as invalid characters in the
+ * identifiers, will be handled in a separate class.
+ */
 public class ReactionNetwork {
 	private JavacycConnection conn = null;
-	public ArrayList<ReactionInstance> reactions_;
+	public HashSet<AbstractReactionInstance> Reactions;
 
 	// Network modification statistics
 	private Report report;
 	private boolean debug_ = true;
 	
 	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
-		ArrayList<ReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
+		ArrayList<AbstractReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
 		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
 		return reactionNetwork;
 	}
 	
-	public ReactionNetwork (JavacycConnection connection, ArrayList<ReactionInstance> reactions) {
+	public ReactionNetwork (JavacycConnection connection, ArrayList<AbstractReactionInstance> reactions) {
 		conn = connection;
-		reactions_ = reactions;
+		this.Reactions = new HashSet<AbstractReactionInstance>();
+		addReactions(reactions);
 		
 		report = new Report();
-		report.setTotalInitialReactionsCount(reactions.size());
+		report.setTotalInitialReactionsCount(Reactions.size());
 	}
 	
 	/**
@@ -39,30 +46,30 @@ public class ReactionNetwork {
 	 * @param compartment Compartment in which exchange reactions to metabolites will be created
 	 * @return Exchange reactions created
 	 */
-	public ArrayList<ReactionInstance> addBoundaryReactionsByCompartment(String compartment) {
+	public ArrayList<AbstractReactionInstance> addBoundaryReactionsByCompartment(String compartment) {
 		ArrayList<Frame> exchangeMetabolites = new ArrayList<Frame>();
 		ArrayList<String> exchangeMetaboliteIDs = new ArrayList<String>();
 		
-		assert reactions_ != null;
+		assert Reactions != null;
 		
 		// For each reaction, check for reactants or products which are consumed or produced in boundary compartment
-		for (ReactionInstance reaction : reactions_) {
-			for (MetaboliteInstance reactant : reaction.reactants_) {
-				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.metabolite_.getLocalID())) {
-					exchangeMetabolites.add(reactant.metabolite_);
-					exchangeMetaboliteIDs.add(reactant.metabolite_.getLocalID());
+		for (AbstractReactionInstance reaction : Reactions) {
+			for (MetaboliteInstance reactant : reaction.Reactants) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.MetaboliteFrame.getLocalID())) {
+					exchangeMetabolites.add(reactant.MetaboliteFrame);
+					exchangeMetaboliteIDs.add(reactant.MetaboliteFrame.getLocalID());
 				}
 			}
-			for (MetaboliteInstance product : reaction.products_) {
-				if (product.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.metabolite_.getLocalID())) {
-					exchangeMetabolites.add(product.metabolite_);
-					exchangeMetaboliteIDs.add(product.metabolite_.getLocalID());
+			for (MetaboliteInstance product : reaction.Products) {
+				if (product.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.MetaboliteFrame.getLocalID())) {
+					exchangeMetabolites.add(product.MetaboliteFrame);
+					exchangeMetaboliteIDs.add(product.MetaboliteFrame.getLocalID());
 				}
 			}
 		}
 		
 		// Generate exchange reactions
-		ArrayList<ReactionInstance> exchangeReactions = new ArrayList<ReactionInstance>();
+		ArrayList<AbstractReactionInstance> exchangeReactions = new ArrayList<AbstractReactionInstance>();
 		for (Frame metabolite : exchangeMetabolites) {
 //			ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
 //			reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
@@ -71,7 +78,7 @@ public class ReactionNetwork {
 			exchangeReactions.add(new ExchangeReactionInstance(metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, metabolite, compartment));
 		}
 		
-		reactions_.addAll(exchangeReactions);
+		addReactions(exchangeReactions);
 		
 		report.setBoundaryMetabolitesFound(exchangeMetabolites.size());
 		report.setBoundaryReactionsAdded(exchangeReactions.size());
@@ -86,68 +93,68 @@ public class ReactionNetwork {
 	 * @param maxSize Maximum size of metabolites that can freely diffuse. Any larger than this and they will be ignored. Size in daltons
 	 * @return
 	 */
-	public ArrayList<ReactionInstance> addPassiveDiffusionReactions(String compartment1, String compartment2, float maxSize) {
+	public ArrayList<AbstractReactionInstance> addPassiveDiffusionReactions(String compartment1, String compartment2, float maxSize) {
 		ArrayList<Frame> diffusionMetabolites = new ArrayList<Frame>();
 		ArrayList<String> diffusionMetaboliteIDs = new ArrayList<String>();
 		
-		assert reactions_ != null;
+		assert Reactions != null;
 		
 		// For each reaction, check for reactants or products which are consumed or produced in compartment1
-		for (ReactionInstance reaction : reactions_) {
-			for (MetaboliteInstance reactant : reaction.reactants_) {
-				if (reactant.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(reactant.metabolite_.getLocalID())) {
+		for (AbstractReactionInstance reaction : Reactions) {
+			for (MetaboliteInstance reactant : reaction.Reactants) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(reactant.MetaboliteFrame.getLocalID())) {
 					Float weight = (float) -1.0;
 					try {
-						String weightString = reactant.metabolite_.getSlotValue("MOLECULAR-WEIGHT");
+						String weightString = reactant.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT");
 						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
 						weight = Float.parseFloat(weightString);
 					} catch (Exception e) {
 						try {
-							System.err.println(reactant.metabolite_.getCommonName() + " : " + reactant.metabolite_.getSlotValue("MOLECULAR-WEIGHT"));
+							System.err.println(reactant.MetaboliteFrame.getCommonName() + " : " + reactant.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT"));
 						} catch (PtoolsErrorException e1) {
 							e1.printStackTrace();
 						}
 					}
 					if (weight <= maxSize) {
-						diffusionMetabolites.add(reactant.metabolite_);
-						diffusionMetaboliteIDs.add(reactant.metabolite_.getLocalID());
+						diffusionMetabolites.add(reactant.MetaboliteFrame);
+						diffusionMetaboliteIDs.add(reactant.MetaboliteFrame.getLocalID());
 					}
 				}
 			}
-			for (MetaboliteInstance product : reaction.products_) {
-				if (product.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(product.metabolite_.getLocalID())) {
+			for (MetaboliteInstance product : reaction.Products) {
+				if (product.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(product.MetaboliteFrame.getLocalID())) {
 					Float weight = (float) -1.0;
 					try {
-						String weightString = product.metabolite_.getSlotValue("MOLECULAR-WEIGHT");
+						String weightString = product.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT");
 						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
 						weight = Float.parseFloat(weightString);
 					} catch (Exception e) {
 						try {
-							System.err.println(product.metabolite_.getCommonName() + " : " + product.metabolite_.getSlotValue("MOLECULAR-WEIGHT"));
+							System.err.println(product.MetaboliteFrame.getCommonName() + " : " + product.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT"));
 						} catch (PtoolsErrorException e1) {
 							e1.printStackTrace();
 						}
 					}
 					if (weight <= maxSize) {
-						diffusionMetabolites.add(product.metabolite_);
-						diffusionMetaboliteIDs.add(product.metabolite_.getLocalID());
+						diffusionMetabolites.add(product.MetaboliteFrame);
+						diffusionMetaboliteIDs.add(product.MetaboliteFrame.getLocalID());
 					}
 				}
 			}
 		}
 		
 		// Generate diffusion reactions
-		ArrayList<ReactionInstance> diffusionReactions = new ArrayList<ReactionInstance>();
+		ArrayList<AbstractReactionInstance> diffusionReactions = new ArrayList<AbstractReactionInstance>();
 		for (Frame metabolite : diffusionMetabolites) {
-			ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
+			HashSet<MetaboliteInstance> reactants = new HashSet<MetaboliteInstance>();
 			reactants.add(new MetaboliteInstance(metabolite, compartment1, 1));
-			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
+			HashSet<MetaboliteInstance> products = new HashSet<MetaboliteInstance>();
 			products.add(new MetaboliteInstance(metabolite, compartment2, 1));
 //			diffusionReactions.add(new ReactionInstance(null, null, metabolite.getLocalID() + "_" + "passiveDiffusionReaction", true, null, reactants, products));
-			diffusionReactions.add(new DiffusionReactionInstance(metabolite.getLocalID() + "_" + "passiveDiffusionReaction", reactants, products));
+			diffusionReactions.add(new DiffusionReactionInstance(metabolite.getLocalID() + "_" + "passiveDiffusionReaction", compartment1, compartment2, reactants, products));
 		}
 		
-		reactions_.addAll(diffusionReactions);
+		addReactions(diffusionReactions);
 		
 		report.setDiffusionMetabolitesFound(diffusionMetabolites.size());
 		report.setDiffusionReactionsAdded(diffusionReactions.size());
@@ -176,15 +183,15 @@ public class ReactionNetwork {
 	 * Remove all Reactions from the ArrayList reactions_ which are either an instance of any of the EcoCyc classes in classToFilter, or
 	 * are explicitly named with their EcoCyc Frame ID in the reactionsToFilter list. 
 	 * 
-	 * @param reactions_ List of Reactions to which the filter will be applied
+	 * @param Reactions List of Reactions to which the filter will be applied
 	 * @param classToFilter EcoCyc Frame ID of a class frame, instances of which should be removed from reactions
 	 * @param reactionsToFilter EcoCyc Frame ID of a reaction frame which should be removed from reactions
 	 * @return FilterResults containing the filtered reaction list and a list of reactions actually removed
 	 */
 	public FilterResults filterReactions(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
 		ArrayList<String> filter = new ArrayList<String>();
-		ArrayList<ReactionInstance> removedList = new ArrayList<ReactionInstance>();
-		ArrayList<ReactionInstance> keepList = new ArrayList<ReactionInstance>();
+		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
+		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
 		
 		try {
 			if (classToFilter != null) {
@@ -200,12 +207,14 @@ public class ReactionNetwork {
 			e.printStackTrace();
 		}
 		
-		for (ReactionInstance reaction : reactions_) {
-			if (filter.contains(reaction.thisReactionFrame_.getLocalID())) removedList.add(reaction);
-			else keepList.add(reaction);
+		for (AbstractReactionInstance reaction : Reactions) {
+			if (reaction instanceof ReactionInstance) {
+				if (filter.contains(((ReactionInstance)reaction).ReactionFrame.getLocalID())) removedList.add(reaction);
+				else keepList.add(reaction);
+			}
 		}
 		
-		reactions_ = keepList;
+		addReactions(keepList);
 		report.setFilteredReactions(removedList.size());
 		
 		return new FilterResults(keepList, removedList);
@@ -222,24 +231,28 @@ public class ReactionNetwork {
 	 * @return Results of the attempt to instantiate generic reactions
 	 */
 	public InstantiationResults generateSpecificReactionsFromGenericReactions() {
-		InstantiationResults instantiationResults = new InstantiationResults(new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>(), new ArrayList<ReactionInstance>());
+		InstantiationResults instantiationResults = new InstantiationResults(new ArrayList<AbstractReactionInstance>(), new ArrayList<AbstractReactionInstance>(), new ArrayList<AbstractReactionInstance>(), new ArrayList<AbstractReactionInstance>());
 		
-		for (ReactionInstance reaction : reactions_) {
-			if (reaction.isGenericReaction(conn)) {
-				instantiationResults.genericReactionsFound.add(reaction);
-				ArrayList<ReactionInstance> instantiatedReactions = reaction.generateInstantiatedReactions();
-				if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
-					instantiationResults.instantiatedReactions.addAll(instantiatedReactions);
+		for (AbstractReactionInstance reaction : Reactions) {
+			if (reaction instanceof ReactionInstance) {
+				if (((ReactionInstance) reaction).isGenericReaction(conn)) {
+					instantiationResults.genericReactionsFound.add(reaction);
+					ArrayList<InstantiatedReactionInstance> instantiatedReactions = ((ReactionInstance) reaction).generateInstantiatedReactions();
+					if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
+						instantiationResults.instantiatedReactions.addAll(instantiatedReactions);
+					} else {
+						instantiationResults.genericReactionsFailedToInstantiate.add(reaction);
+					}
 				} else {
-					instantiationResults.genericReactionsFailedToInstantiate.add(reaction);
+					instantiationResults.nonGenericReaction.add(reaction);
 				}
-			} else {
-				instantiationResults.nonGenericReaction.add(reaction);
 			}
 		}
 		
-		reactions_ = instantiationResults.nonGenericReaction;
-		reactions_.addAll(instantiationResults.instantiatedReactions);
+		addReactions(instantiationResults.nonGenericReaction);
+		addReactions(instantiationResults.instantiatedReactions);
+//		Reactions = instantiationResults.nonGenericReaction;
+//		Reactions.addAll(instantiationResults.instantiatedReactions);
 		
 		report.setGenericReactionsFound(instantiationResults.genericReactionsFound.size());
 		report.setGenericReactionsInstantiated(instantiationResults.genericReactionsFound.size() - instantiationResults.genericReactionsFailedToInstantiate.size());
@@ -250,7 +263,7 @@ public class ReactionNetwork {
 	
 	public void printNetworkStatistics() {
 		report.setTransportReactions(countTransportReactions());
-		report.setTotalReactions(reactions_.size());
+		report.setTotalReactions(Reactions.size());
 		System.out.println(report.report());
 //		System.out.println("Writing statistics ...");
 //		System.out.println("All reactions : " + totalStartingReactions_);
@@ -272,12 +285,12 @@ public class ReactionNetwork {
 		int transportReactionCount = 0;
 		try {
 			list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
-			for (ReactionInstance reaction : reactions_) {
-				if (reaction.thisReactionFrame_ != null) {
-					if (list.contains(reaction.thisReactionFrame_.getLocalID())) transportReactionCount++;
+			for (AbstractReactionInstance reaction : Reactions) {
+				if (reaction instanceof ReactionInstance) {
+					if (list.contains(((ReactionInstance)reaction).ReactionFrame.getLocalID())) transportReactionCount++;
 				}
-				else if (reaction.parentReaction_ != null) {
-					if (list.contains(reaction.parentReaction_.getLocalID())) transportReactionCount++;
+				else if (reaction instanceof InstantiatedReactionInstance) {
+					if (list.contains(((InstantiatedReactionInstance)reaction).parentReactionFrame.getLocalID())) transportReactionCount++;
 				}
 			}
 		} catch (PtoolsErrorException e) {
@@ -293,8 +306,8 @@ public class ReactionNetwork {
 	 * @return ArrayList of ReactionInstance objects
 	 */
 	@SuppressWarnings("unchecked")
-	private static ArrayList<ReactionInstance> reactionListToReactionInstances(ArrayList<Reaction> reactions) {
-		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
+	private static ArrayList<AbstractReactionInstance> reactionListToReactionInstances(ArrayList<Reaction> reactions) {
+		ArrayList<AbstractReactionInstance> reactionInstances = new ArrayList<AbstractReactionInstance>();
 		for (Reaction reaction : reactions) {
 			try {
 				ArrayList<String> locations = reaction.getSlotValues("RXN-LOCATIONS");
@@ -351,6 +364,16 @@ public class ReactionNetwork {
 //		</reaction>
 	}
 	
+	// Network Verification Steps
+	private void verifyNetwork() {
+		
+	}
+	
+	private void addReactions(ArrayList<AbstractReactionInstance> reactions) {
+		//TODO Detect and handle duplicates.
+		for (AbstractReactionInstance reaction : reactions) Reactions.add(reaction);
+	}
+	
 	// Internal Classes
 	/**
  	 * Internal class which holds results of an attempt to instantiate generic reactions in a list of reactions.
@@ -358,12 +381,12 @@ public class ReactionNetwork {
  	 * @author Jesse
  	 */
  	private class InstantiationResults {
- 		public ArrayList<ReactionInstance> instantiatedReactions;
- 		public ArrayList<ReactionInstance> genericReactionsFound;
- 		public ArrayList<ReactionInstance> genericReactionsFailedToInstantiate;
- 		public ArrayList<ReactionInstance> nonGenericReaction;
+ 		public ArrayList<AbstractReactionInstance> instantiatedReactions;
+ 		public ArrayList<AbstractReactionInstance> genericReactionsFound;
+ 		public ArrayList<AbstractReactionInstance> genericReactionsFailedToInstantiate;
+ 		public ArrayList<AbstractReactionInstance> nonGenericReaction;
 		
-		public InstantiationResults(ArrayList<ReactionInstance> instantiatedReactions, ArrayList<ReactionInstance> genericReactionsFound, ArrayList<ReactionInstance> genericReactionsFailedToInstantiate, ArrayList<ReactionInstance> nonGenericReaction) {
+		public InstantiationResults(ArrayList<AbstractReactionInstance> instantiatedReactions, ArrayList<AbstractReactionInstance> genericReactionsFound, ArrayList<AbstractReactionInstance> genericReactionsFailedToInstantiate, ArrayList<AbstractReactionInstance> nonGenericReaction) {
 			this.instantiatedReactions = instantiatedReactions;
 			this.genericReactionsFound = genericReactionsFound;
 			this.genericReactionsFailedToInstantiate = genericReactionsFailedToInstantiate;
@@ -377,10 +400,10 @@ public class ReactionNetwork {
 	 * @author Jesse
 	 */
  	private class FilterResults {
-		public ArrayList<ReactionInstance> keepList;
-		public ArrayList<ReactionInstance> removedList;
+		public ArrayList<AbstractReactionInstance> keepList;
+		public ArrayList<AbstractReactionInstance> removedList;
 		
-		public FilterResults(ArrayList<ReactionInstance> keepList, ArrayList<ReactionInstance> removedList) {
+		public FilterResults(ArrayList<AbstractReactionInstance> keepList, ArrayList<AbstractReactionInstance> removedList) {
 			this.keepList = keepList;
 			this.removedList = removedList;
 		}

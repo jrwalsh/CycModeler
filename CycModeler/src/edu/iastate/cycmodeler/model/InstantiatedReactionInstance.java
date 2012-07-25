@@ -1,6 +1,7 @@
 package edu.iastate.cycmodeler.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
@@ -13,21 +14,48 @@ import edu.iastate.javacyco.Reaction;
  * 
  * @author Jesse Walsh
  */
-public class InstantiatedReactionInstance extends ReactionInstance {
+public class InstantiatedReactionInstance extends AbstractReactionInstance {
+	protected Reaction parentReactionFrame;
 
-	public InstantiatedReactionInstance(Reaction parentReactionFrame, String reactionName, boolean reversible, String reactionLocation, ArrayList<MetaboliteInstance> reactants, ArrayList<MetaboliteInstance> products) {
-		super(parentReactionFrame, null, reactionName, reversible, reactionLocation, reactants, products, false);
+	public static ArrayList<AbstractReactionInstance> getInstantiatedReactions(ReactionInstance reaction) {
+		//TODO
+		return null;
+	}
+			
+	public InstantiatedReactionInstance(Reaction parentReactionFrame, String reactionName, boolean reversible, String reactionLocation, HashSet<MetaboliteInstance> reactants, HashSet<MetaboliteInstance> products) {
+		this.parentReactionFrame = parentReactionFrame;
+		this.Name = reactionName;
+		this.Reversible = reversible;
+		this.ReactionLocation = reactionLocation;
+		this.Reactants = reactants;
+		this.Products = products;
 	}
 
 	public String generateReactionID() {
 		//FIXME need to add correct suffix to names here!!!!!
 		String baseID = "";
-		if (thisReactionFrame_ != null) baseID = thisReactionFrame_.getLocalID();
-		else if (parentReaction_ != null) baseID = parentReaction_.getLocalID();
-		else baseID = name_;
+		if (parentReactionFrame != null) baseID = parentReactionFrame.getLocalID();
+		else baseID = Name;
 		
 		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
 		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
+	}
+
+	@Override
+	protected void addReactant(MetaboliteInstance reactant) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void addProduct(MetaboliteInstance product) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public String reactionGeneRule(boolean b) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
