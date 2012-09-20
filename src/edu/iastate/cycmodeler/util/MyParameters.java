@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 import edu.iastate.cycmodeler.logic.CycModeler.Setting;
 
-public class Parameters {
+public class MyParameters {
 	// Global static variables
 	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
 	static public String connectionStringEcoServer =  "ecoserver.vrac.iastate.edu";
@@ -20,19 +20,19 @@ public class Parameters {
 	
 	
 	// Parameters
-	protected String OutputDirectory;
+	public String OutputDirectory;
 	public String DefaultCompartment;
-	protected int DefaultSBMLLevel;
-	protected int DefaultSBMLVersion;
+	public int DefaultSBMLLevel;
+	public int DefaultSBMLVersion;
 	public HashMap<String, String> CompartmentAbrevs;
 	public String SpeciesPrefix;
 	public String ReactionPrefix;
 	public String BoundaryCompartmentName;
 	public String ExchangeReactionSuffix;
-	protected String ModelName;
-	protected String ExternalCompartmentName;
+	public String ModelName;
+	public String ExternalCompartmentName;
 	
-	public Parameters() {
+	public MyParameters() {
 		initDefault();
 	}
 	

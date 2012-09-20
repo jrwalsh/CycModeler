@@ -3,17 +3,18 @@ package edu.iastate.cycmodeler.model;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.PtoolsErrorException;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public abstract class AbstractReactionInstance {
-	public String Name;
-	public boolean Reversible;
-	public HashSet<MetaboliteInstance> Reactants;
-	public HashSet<MetaboliteInstance> Products;
-	public String ReactionLocation;
+	public String name_;
+	public boolean reversible_;
+	public HashSet<MetaboliteInstance> reactants_;
+	public HashSet<MetaboliteInstance> products_;
+	public String reactionLocation_;
 	
 	/**
 	 * Test if a reaction is balanced by adding up each element on the reactant side and each element on the product side and
@@ -32,38 +33,38 @@ public abstract class AbstractReactionInstance {
 		HashMap<String, Integer> reactantElements = new HashMap<String, Integer>();
 		HashMap<String, Integer> productElements = new HashMap<String, Integer>();
 		try {
-			for (MetaboliteInstance reactant : Reactants) {
+			for (MetaboliteInstance reactant : reactants_) {
 				// Special Case
-				int specialCases = 0;
-				if (reactant.MetaboliteFrame.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-				else if (reactant.MetaboliteFrame.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
-				switch (specialCases) {
-					case 1: {
-						if (reactantElements.containsKey("A")) {
-							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
-						} else {
-							reactantElements.put("A", (1*reactant.coefficient_));
-						}
-					} break;
-					case 2: {
-						if (reactantElements.containsKey("A")) {
-							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
-						} else {
-							reactantElements.put("A", (1*reactant.coefficient_));
-						}
-						if (reactantElements.containsKey("H")) {
-							reactantElements.put("H", reactantElements.get("H") + (2*reactant.coefficient_));
-						} else {
-							reactantElements.put("H", (2*reactant.coefficient_));
-						}
-					} break;
-				}
-				if (specialCases != 0) {
-					continue;
-				}
+//				int specialCases = 0;
+//				if (reactant.getMetaboliteID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
+//				else if (reactant.getMetaboliteID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
+//				switch (specialCases) {
+//					case 1: {
+//						if (reactantElements.containsKey("A")) {
+//							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
+//						} else {
+//							reactantElements.put("A", (1*reactant.coefficient_));
+//						}
+//					} break;
+//					case 2: {
+//						if (reactantElements.containsKey("A")) {
+//							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
+//						} else {
+//							reactantElements.put("A", (1*reactant.coefficient_));
+//						}
+//						if (reactantElements.containsKey("H")) {
+//							reactantElements.put("H", reactantElements.get("H") + (2*reactant.coefficient_));
+//						} else {
+//							reactantElements.put("H", (2*reactant.coefficient_));
+//						}
+//					} break;
+//				}
+//				if (specialCases != 0) {
+//					continue;
+//				}
 				
 				// Regular Case
-				for (Object o : reactant.MetaboliteFrame.getSlotValues("CHEMICAL-FORMULA")) {
+				for (Object o : reactant.getMetaboliteFrame().getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
 					Integer quantity = Integer.parseInt(chemicalFormulaElement.split(",")[1]);
@@ -77,38 +78,38 @@ public abstract class AbstractReactionInstance {
 				}
 			}
 			
-			for (MetaboliteInstance product : Products) {
+			for (MetaboliteInstance product : products_) {
 				// Special Case
-				int specialCases = 0;
-				if (product.MetaboliteFrame.getLocalID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-				else if (product.MetaboliteFrame.getLocalID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
-				switch (specialCases) {
-					case 1: {
-						if (productElements.containsKey("A")) {
-							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
-						} else {
-							productElements.put("A", (1*product.coefficient_));
-						}
-					} break;
-					case 2: {
-						if (productElements.containsKey("A")) {
-							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
-						} else {
-							productElements.put("A", (1*product.coefficient_));
-						}
-						if (productElements.containsKey("H")) {
-							productElements.put("H", productElements.get("H") + (2*product.coefficient_));
-						} else {
-							productElements.put("H", (1*product.coefficient_));
-						}
-					} break;
-				}
-				if (specialCases != 0) {
-					continue;
-				}
+//				int specialCases = 0;
+//				if (product.getMetaboliteID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
+//				else if (product.getMetaboliteID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
+//				switch (specialCases) {
+//					case 1: {
+//						if (productElements.containsKey("A")) {
+//							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
+//						} else {
+//							productElements.put("A", (1*product.coefficient_));
+//						}
+//					} break;
+//					case 2: {
+//						if (productElements.containsKey("A")) {
+//							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
+//						} else {
+//							productElements.put("A", (1*product.coefficient_));
+//						}
+//						if (productElements.containsKey("H")) {
+//							productElements.put("H", productElements.get("H") + (2*product.coefficient_));
+//						} else {
+//							productElements.put("H", (1*product.coefficient_));
+//						}
+//					} break;
+//				}
+//				if (specialCases != 0) {
+//					continue;
+//				}
 				
 				// Regular Case
-				for (Object o : product.MetaboliteFrame.getSlotValues("CHEMICAL-FORMULA")) {
+				for (Object o : product.getMetaboliteFrame().getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
 					Integer quantity = Integer.parseInt(chemicalFormulaElement.split(",")[1]);
@@ -144,9 +145,9 @@ public abstract class AbstractReactionInstance {
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31).
-	        append(Reactants).
-	        append(Products).
-	        append(ReactionLocation).
+	        append(reactants_).
+	        append(products_).
+	        append(reactionLocation_).
 	        toHashCode();
 	}
 
@@ -161,13 +162,14 @@ public abstract class AbstractReactionInstance {
 
 		AbstractReactionInstance other = (AbstractReactionInstance) obj;
 		return new EqualsBuilder().
-				append(this.Reactants, other.Reactants).
-				append(this.Products, other.Products).
-				append(this.ReactionLocation, other.ReactionLocation).
+				append(this.reactants_, other.reactants_).
+				append(this.products_, other.products_).
+				append(this.reactionLocation_, other.reactionLocation_).
 				isEquals();
 	}
 	
 	public abstract String generateReactionID();
+	public abstract String getGeneProteinReactionRule();
 	protected abstract void addReactant(MetaboliteInstance reactant);
 	protected abstract void addProduct(MetaboliteInstance product);
 }

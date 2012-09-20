@@ -11,7 +11,7 @@ import edu.iastate.cycmodeler.logic.CycModeler;
 import edu.iastate.cycmodeler.model.MetaboliteInstance;
 import edu.iastate.cycmodeler.model.ReactionInstance;
 import edu.iastate.cycmodeler.model.ReactionNetwork;
-import edu.iastate.cycmodeler.util.Globals;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
@@ -74,8 +74,8 @@ public class Test {
 	public static void main(String[] args) {
 		System.out.println("TESTING MODE");
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(Globals.connectionStringTHTServer,Globals.defaultPort);
-		conn.selectOrganism(Globals.organismStringK12);
+		conn = new JavacycConnection(MyParameters.connectionStringTHTServer,MyParameters.defaultPort);
+		conn.selectOrganism(MyParameters.organismStringK12);
 		test();
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
@@ -96,8 +96,8 @@ public class Test {
 			System.out.println(m1.equals(m3));
 			System.out.println(m1.equals(m2));
 			
-			ReactionInstance ri = new ReactionInstance((Reaction)Frame.load(conn, "RXN0-6541"), (Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m1, m2, false);
-			ReactionInstance ri2 = new ReactionInstance((Reaction)Frame.load(conn, "6PFRUCTPHOS-RXN"), (Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m3, m4, false);
+			ReactionInstance ri = new ReactionInstance((Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m1, m2);
+			ReactionInstance ri2 = new ReactionInstance((Reaction)Frame.load(conn, "RXN0-6541"), "Reaction 1", true, "Here", m3, m4);
 			HashSet<ReactionInstance> set = new HashSet<ReactionInstance>();
 			set.add(ri);
 			set.add(ri2);
@@ -226,91 +226,91 @@ public class Test {
 	}
 	
 	// Testing
-	public static void sbmlInteralFunctionTests(int mode) {
-		CycModeler modeler = new CycModeler(conn, "");
-		switch (mode) {
-			case 40: {
-				// Check behavior of the isReactionBalanced function
-				ArrayList<String> reacs = new ArrayList<String>();
-				ArrayList<String> prods =  new ArrayList<String>();
-				reacs.add("GLC");
-				reacs.add("GAP");
-				prods.add("GAP");
-				prods.add("GLC");
-//				Balance balance = new Balance(conn);
-//				System.out.println(balance.isReactionBalanced(reacs, prods));
-			} break;
-			case 60: {
-				// Check if a pathway contains a general term
-//				modeler.isGeneralizedReaction("MALATE-DEHYDROGENASE-ACCEPTOR-RXN");
-//				modeler.isGeneralizedReaction("SUCCINATE-DEHYDROGENASE-UBIQUINONE-RXN");
-			} break;
-			case 80: {
-				// Look for conditions in comments
-				try {
-					ArrayList<Reaction> allRxns = Reaction.all(conn);
-					for (Reaction r : allRxns) {
-						if (r.getComment() != null && r.getComment().toLowerCase().contains("aerobic")) {
-							System.out.println(r.getLocalID());
-							System.out.println(r.getComment());
-						}
-					}
-				} catch (PtoolsErrorException e) {
-					e.printStackTrace();
-				}
-			} break;
-			case 200: {
-				modeler.createGenomeScaleModelFromEcoCyc();
-			} break;
-			case 210: {
-				try {
-					Frame.load(conn, "G6P");
-//					System.out.println(modeler.prepareGenericReaction(modeler.loadReaction("ABC-56-RXN")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN-11319")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN0-1842")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN0-3381")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN0-4261")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN0-4581")).size());
-//					System.out.println(instantiateGenericReaction(loadReaction("RXN0-5128")).size());
-				} catch (PtoolsErrorException e) {
-					e.printStackTrace();
-				}
-			} break;
-//			case 220: {
+//	public static void sbmlInteralFunctionTests(int mode) {
+//		CycModeler modeler = new CycModeler(conn, "");
+//		switch (mode) {
+//			case 40: {
+//				// Check behavior of the isReactionBalanced function
+//				ArrayList<String> reacs = new ArrayList<String>();
+//				ArrayList<String> prods =  new ArrayList<String>();
+//				reacs.add("GLC");
+//				reacs.add("GAP");
+//				prods.add("GAP");
+//				prods.add("GLC");
+////				Balance balance = new Balance(conn);
+////				System.out.println(balance.isReactionBalanced(reacs, prods));
+//			} break;
+//			case 60: {
+//				// Check if a pathway contains a general term
+////				modeler.isGeneralizedReaction("MALATE-DEHYDROGENASE-ACCEPTOR-RXN");
+////				modeler.isGeneralizedReaction("SUCCINATE-DEHYDROGENASE-UBIQUINONE-RXN");
+//			} break;
+//			case 80: {
+//				// Look for conditions in comments
 //				try {
-//					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
-////					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
-////					rxn.reactants_.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.DefaultCompartment, 1));
-////					rxn.products_.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.DefaultCompartment, 1));
-////					rxns.add(rxn);
-//					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
-////					doc = modeler.generateSBMLModel(doc, rxns);
-//					SBMLWriter writer = new SBMLWriter();
-//					writer.writeSBML(doc, modeler.OutputDirectory + "testing_SBML.xml");
+//					ArrayList<Reaction> allRxns = Reaction.all(conn);
+//					for (Reaction r : allRxns) {
+//						if (r.getComment() != null && r.getComment().toLowerCase().contains("aerobic")) {
+//							System.out.println(r.getLocalID());
+//							System.out.println(r.getComment());
+//						}
+//					}
 //				} catch (PtoolsErrorException e) {
 //					e.printStackTrace();
 //				}
 //			} break;
-			case 230: {
-//				readInPalssonIDMaps("/home/Jesse/Desktop/compare_palsson_ecocyc/iAF1260-ecocyc-rxn-mappings.txt");
-			} break;
-			case 240: {
-//				verifyCompoundMappings();
-			} break;
-			case 250: {
-//				verifyReactionMappings();
-//				coreReactionTest();
-			} break;
-			case 300: {
-				ArrayList<Reaction> l = new ArrayList<Reaction>();
-				try {
-//					l.add((Reaction)Reaction.load(conn, "3.1.26.5-RXN"));
-					l.add((Reaction)Reaction.load(conn, "3-nucleotid-RXN"));
-				} catch (PtoolsErrorException e) {
-					e.printStackTrace();
-				}
-//				modeler.generateSpecificReactionsFromGenericReactions(l);
-			} break;
-		}
-	}
+//			case 200: {
+//				modeler.createGenomeScaleModelFromEcoCyc();
+//			} break;
+//			case 210: {
+//				try {
+//					Frame.load(conn, "G6P");
+////					System.out.println(modeler.prepareGenericReaction(modeler.loadReaction("ABC-56-RXN")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN-11319")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN0-1842")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN0-3381")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN0-4261")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN0-4581")).size());
+////					System.out.println(instantiateGenericReaction(loadReaction("RXN0-5128")).size());
+//				} catch (PtoolsErrorException e) {
+//					e.printStackTrace();
+//				}
+//			} break;
+////			case 220: {
+////				try {
+////					ArrayList<ReactionInstance> rxns = new ArrayList<ReactionInstance>();
+//////					ReactionInstance rxn = new ReactionInstance(null, modeler.loadReaction("PGLUCISOM-RXN"), "NamedReaction", false, new ArrayList<MetaboliteInstance>(), new ArrayList<MetaboliteInstance>());
+//////					rxn.reactants_.add(new MetaboliteInstance(modeler.loadFrame("GLC-6-P"), modeler.DefaultCompartment, 1));
+//////					rxn.products_.add(new MetaboliteInstance(modeler.loadFrame("FRUCTOSE-6P"), modeler.DefaultCompartment, 1));
+//////					rxns.add(rxn);
+////					SBMLDocument doc = modeler.createBlankSBMLDocument("Testing", 2, 1);
+//////					doc = modeler.generateSBMLModel(doc, rxns);
+////					SBMLWriter writer = new SBMLWriter();
+////					writer.writeSBML(doc, modeler.OutputDirectory + "testing_SBML.xml");
+////				} catch (PtoolsErrorException e) {
+////					e.printStackTrace();
+////				}
+////			} break;
+//			case 230: {
+////				readInPalssonIDMaps("/home/Jesse/Desktop/compare_palsson_ecocyc/iAF1260-ecocyc-rxn-mappings.txt");
+//			} break;
+//			case 240: {
+////				verifyCompoundMappings();
+//			} break;
+//			case 250: {
+////				verifyReactionMappings();
+////				coreReactionTest();
+//			} break;
+//			case 300: {
+//				ArrayList<Reaction> l = new ArrayList<Reaction>();
+//				try {
+////					l.add((Reaction)Reaction.load(conn, "3.1.26.5-RXN"));
+//					l.add((Reaction)Reaction.load(conn, "3-nucleotid-RXN"));
+//				} catch (PtoolsErrorException e) {
+//					e.printStackTrace();
+//				}
+////				modeler.generateSpecificReactionsFromGenericReactions(l);
+//			} break;
+//		}
+//	}
 }
