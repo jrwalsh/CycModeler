@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
@@ -15,7 +16,7 @@ import edu.iastate.javacyco.Reaction;
  * @author Jesse Walsh
  */
 public class InstantiatedReactionInstance extends AbstractReactionInstance {
-	protected Reaction parentReactionFrame;
+	protected Reaction parentReactionFrame_;
 
 	public static ArrayList<AbstractReactionInstance> getInstantiatedReactions(ReactionInstance reaction) {
 		//TODO
@@ -23,22 +24,22 @@ public class InstantiatedReactionInstance extends AbstractReactionInstance {
 	}
 			
 	public InstantiatedReactionInstance(Reaction parentReactionFrame, String reactionName, boolean reversible, String reactionLocation, HashSet<MetaboliteInstance> reactants, HashSet<MetaboliteInstance> products) {
-		this.parentReactionFrame = parentReactionFrame;
-		this.Name = reactionName;
-		this.Reversible = reversible;
-		this.ReactionLocation = reactionLocation;
-		this.Reactants = reactants;
-		this.Products = products;
+		this.parentReactionFrame_ = parentReactionFrame;
+		this.name_ = reactionName;
+		this.reversible_ = reversible;
+		this.reactionLocation_ = reactionLocation;
+		this.reactants_ = reactants;
+		this.products_ = products;
 	}
 
 	public String generateReactionID() {
 		//FIXME need to add correct suffix to names here!!!!!
 		String baseID = "";
-		if (parentReactionFrame != null) baseID = parentReactionFrame.getLocalID();
-		else baseID = Name;
+		if (parentReactionFrame_ != null) baseID = parentReactionFrame_.getLocalID();
+		else baseID = name_;
 		
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
-		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
+		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
 	}
 
 	@Override
@@ -54,6 +55,12 @@ public class InstantiatedReactionInstance extends AbstractReactionInstance {
 	}
 
 	public String reactionGeneRule(boolean b) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getGeneProteinReactionRule() {
 		// TODO Auto-generated method stub
 		return null;
 	}

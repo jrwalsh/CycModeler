@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.PtoolsErrorException;
 
@@ -13,7 +14,7 @@ import edu.iastate.javacyco.PtoolsErrorException;
  * @author Jesse Walsh
  */
 public class MetaboliteInstance {
-	public Frame MetaboliteFrame;
+	private Frame metaboliteFrame_;
 	public String compartment_;
 	public int coefficient_;
 	public String chemicalFormula_;
@@ -27,7 +28,7 @@ public class MetaboliteInstance {
 	 * @param coefficient
 	 */
 	public MetaboliteInstance(Frame metabolite, String compartment, int coefficient) {
-		MetaboliteFrame = metabolite;
+		metaboliteFrame_ = metabolite;
 		compartment_ = compartment;
 		coefficient_ = coefficient;
 		chemicalFormula_ = fetchChemicalFormula();
@@ -49,8 +50,8 @@ public class MetaboliteInstance {
 	private String fetchChemicalFormula() {
 		String chemicalFormula = "";
 		try {
-			if (!MetaboliteFrame.hasSlot("CHEMICAL-FORMULA")) return "";
-			for (Object o : MetaboliteFrame.getSlotValues("CHEMICAL-FORMULA")) {
+			if (!metaboliteFrame_.hasSlot("CHEMICAL-FORMULA")) return "";
+			for (Object o : metaboliteFrame_.getSlotValues("CHEMICAL-FORMULA")) {
 				String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 				String element = chemicalFormulaElement.split(",")[0];
 				Integer quantity = 1;
@@ -83,8 +84,8 @@ public class MetaboliteInstance {
 		String keggID = "";
 		try {
 			ArrayList<String> dblinks = null;
-			if (MetaboliteFrame.hasSlot("DBLINKS") && MetaboliteFrame.getSlotValues("DBLINKS") != null) {
-				dblinks = MetaboliteFrame.getSlotValues("DBLINKS");
+			if (metaboliteFrame_.hasSlot("DBLINKS") && metaboliteFrame_.getSlotValues("DBLINKS") != null) {
+				dblinks = metaboliteFrame_.getSlotValues("DBLINKS");
 			
 				for (Object dblink : dblinks) {
 					ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
@@ -100,6 +101,8 @@ public class MetaboliteInstance {
 		return keggID;
 	}
 	
+	
+	// Overrides
 	/**
 	 * Prepends a species prefix to the beginning of the metabolite ID, then appends compartment abbreviations to the end of the SBML metabolite ID.  This 
 	 * helps to identify metabolite IDs from other ID types in the finished model, as well as allows metabolites in separate compartments to be treated
@@ -108,9 +111,9 @@ public class MetaboliteInstance {
 	 * @return
 	 */
 	public String generateSpeciesID() {
-		String baseID = MetaboliteFrame.getLocalID();
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment_));
-		else return CycModeler.convertToSBMLSafe(CycModeler.SpeciesPrefix + "_" + baseID + "_" + CycModeler.CompartmentAbrevs.get(compartment_));
+		String baseID = metaboliteFrame_.getLocalID();
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.parameters.SpeciesPrefix + "" + baseID + "_" + CycModeler.parameters.CompartmentAbrevs.get(compartment_));
+		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.SpeciesPrefix + "_" + baseID + "_" + CycModeler.parameters.CompartmentAbrevs.get(compartment_));
 	}
 	
 	@Override
@@ -118,7 +121,7 @@ public class MetaboliteInstance {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((MetaboliteFrame == null) ? 0 : MetaboliteFrame.getLocalID().hashCode());
+				+ ((metaboliteFrame_ == null) ? 0 : metaboliteFrame_.getLocalID().hashCode());
 		return result;
 	}
 
@@ -131,14 +134,23 @@ public class MetaboliteInstance {
 		if (getClass() != obj.getClass())
 			return false;
 		MetaboliteInstance other = (MetaboliteInstance) obj;
-		if (MetaboliteFrame == null) {
-			if (other.MetaboliteFrame != null)
+		if (metaboliteFrame_ == null) {
+			if (other.metaboliteFrame_ != null)
 				return false;
-		} else if (!MetaboliteFrame.getLocalID().equals(other.MetaboliteFrame.getLocalID()))
+		} else if (!metaboliteFrame_.getLocalID().equals(other.metaboliteFrame_.getLocalID()))
 			return false;
 		return true;
 	}
 
+	
+	// Getters and Setters
+	public Frame getMetaboliteFrame() {
+		return metaboliteFrame_;
+	}
+	public String getMetaboliteID() {
+		return metaboliteFrame_.getLocalID();
+	}
+	
 	// Internal Classes
 	/**
 	 * Enum class which represents element codes used in EcoCyc.  Most two-letter elements are not listed with a capital first letter and lowercase second.

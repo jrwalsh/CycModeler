@@ -22,7 +22,6 @@ public class ReactionNetwork {
 
 	// Network modification statistics
 	private Report report;
-	private boolean debug_ = true;
 	
 	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
 		ArrayList<AbstractReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
@@ -33,7 +32,7 @@ public class ReactionNetwork {
 	public ReactionNetwork (JavacycConnection connection, ArrayList<AbstractReactionInstance> reactions) {
 		conn = connection;
 		this.Reactions = new HashSet<AbstractReactionInstance>();
-		addReactions(reactions);
+		addReactionsToNetwork(reactions);
 		
 		report = new Report();
 		report.setTotalInitialReactionsCount(Reactions.size());
@@ -54,16 +53,16 @@ public class ReactionNetwork {
 		
 		// For each reaction, check for reactants or products which are consumed or produced in boundary compartment
 		for (AbstractReactionInstance reaction : Reactions) {
-			for (MetaboliteInstance reactant : reaction.Reactants) {
-				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.MetaboliteFrame.getLocalID())) {
-					exchangeMetabolites.add(reactant.MetaboliteFrame);
-					exchangeMetaboliteIDs.add(reactant.MetaboliteFrame.getLocalID());
+			for (MetaboliteInstance reactant : reaction.reactants_) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(reactant.getMetaboliteID())) {
+					exchangeMetabolites.add(reactant.getMetaboliteFrame());
+					exchangeMetaboliteIDs.add(reactant.getMetaboliteID());
 				}
 			}
-			for (MetaboliteInstance product : reaction.Products) {
-				if (product.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.MetaboliteFrame.getLocalID())) {
-					exchangeMetabolites.add(product.MetaboliteFrame);
-					exchangeMetaboliteIDs.add(product.MetaboliteFrame.getLocalID());
+			for (MetaboliteInstance product : reaction.products_) {
+				if (product.compartment_.equalsIgnoreCase(compartment) && !exchangeMetaboliteIDs.contains(product.getMetaboliteID())) {
+					exchangeMetabolites.add(product.getMetaboliteFrame());
+					exchangeMetaboliteIDs.add(product.getMetaboliteID());
 				}
 			}
 		}
@@ -75,10 +74,10 @@ public class ReactionNetwork {
 //			reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
 //			ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
 //			products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
-			exchangeReactions.add(new ExchangeReactionInstance(metabolite.getLocalID() + "_" + CycModeler.ExchangeReactionSuffix, metabolite, compartment));
+			exchangeReactions.add(new ExchangeReactionInstance(metabolite.getLocalID() + "_" + CycModeler.parameters.ExchangeReactionSuffix, metabolite, compartment));
 		}
 		
-		addReactions(exchangeReactions);
+		addReactionsToNetwork(exchangeReactions);
 		
 		report.setBoundaryMetabolitesFound(exchangeMetabolites.size());
 		report.setBoundaryReactionsAdded(exchangeReactions.size());
@@ -101,43 +100,43 @@ public class ReactionNetwork {
 		
 		// For each reaction, check for reactants or products which are consumed or produced in compartment1
 		for (AbstractReactionInstance reaction : Reactions) {
-			for (MetaboliteInstance reactant : reaction.Reactants) {
-				if (reactant.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(reactant.MetaboliteFrame.getLocalID())) {
+			for (MetaboliteInstance reactant : reaction.reactants_) {
+				if (reactant.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(reactant.getMetaboliteID())) {
 					Float weight = (float) -1.0;
 					try {
-						String weightString = reactant.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT");
+						String weightString = reactant.getMetaboliteFrame().getSlotValue("MOLECULAR-WEIGHT");
 						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
 						weight = Float.parseFloat(weightString);
 					} catch (Exception e) {
 						try {
-							System.err.println(reactant.MetaboliteFrame.getCommonName() + " : " + reactant.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT"));
+							System.err.println(reactant.getMetaboliteFrame().getCommonName() + " : " + reactant.getMetaboliteFrame().getSlotValue("MOLECULAR-WEIGHT"));
 						} catch (PtoolsErrorException e1) {
 							e1.printStackTrace();
 						}
 					}
 					if (weight <= maxSize) {
-						diffusionMetabolites.add(reactant.MetaboliteFrame);
-						diffusionMetaboliteIDs.add(reactant.MetaboliteFrame.getLocalID());
+						diffusionMetabolites.add(reactant.getMetaboliteFrame());
+						diffusionMetaboliteIDs.add(reactant.getMetaboliteID());
 					}
 				}
 			}
-			for (MetaboliteInstance product : reaction.Products) {
-				if (product.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(product.MetaboliteFrame.getLocalID())) {
+			for (MetaboliteInstance product : reaction.products_) {
+				if (product.compartment_.equalsIgnoreCase(compartment1) && !diffusionMetaboliteIDs.contains(product.getMetaboliteID())) {
 					Float weight = (float) -1.0;
 					try {
-						String weightString = product.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT");
+						String weightString = product.getMetaboliteFrame().getSlotValue("MOLECULAR-WEIGHT");
 						if (weightString.contains("d")) weightString = weightString.substring(0, weightString.indexOf("d")-1);
 						weight = Float.parseFloat(weightString);
 					} catch (Exception e) {
 						try {
-							System.err.println(product.MetaboliteFrame.getCommonName() + " : " + product.MetaboliteFrame.getSlotValue("MOLECULAR-WEIGHT"));
+							System.err.println(product.getMetaboliteFrame().getCommonName() + " : " + product.getMetaboliteFrame().getSlotValue("MOLECULAR-WEIGHT"));
 						} catch (PtoolsErrorException e1) {
 							e1.printStackTrace();
 						}
 					}
 					if (weight <= maxSize) {
-						diffusionMetabolites.add(product.MetaboliteFrame);
-						diffusionMetaboliteIDs.add(product.MetaboliteFrame.getLocalID());
+						diffusionMetabolites.add(product.getMetaboliteFrame());
+						diffusionMetaboliteIDs.add(product.getMetaboliteID());
 					}
 				}
 			}
@@ -154,7 +153,7 @@ public class ReactionNetwork {
 			diffusionReactions.add(new DiffusionReactionInstance(metabolite.getLocalID() + "_" + "passiveDiffusionReaction", compartment1, compartment2, reactants, products));
 		}
 		
-		addReactions(diffusionReactions);
+		addReactionsToNetwork(diffusionReactions);
 		
 		report.setDiffusionMetabolitesFound(diffusionMetabolites.size());
 		report.setDiffusionReactionsAdded(diffusionReactions.size());
@@ -209,12 +208,12 @@ public class ReactionNetwork {
 		
 		for (AbstractReactionInstance reaction : Reactions) {
 			if (reaction instanceof ReactionInstance) {
-				if (filter.contains(((ReactionInstance)reaction).ReactionFrame.getLocalID())) removedList.add(reaction);
+				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
 				else keepList.add(reaction);
 			}
 		}
 		
-		addReactions(keepList);
+		addReactionsToNetwork(keepList);
 		report.setFilteredReactions(removedList.size());
 		
 		return new FilterResults(keepList, removedList);
@@ -249,8 +248,8 @@ public class ReactionNetwork {
 			}
 		}
 		
-		addReactions(instantiationResults.nonGenericReaction);
-		addReactions(instantiationResults.instantiatedReactions);
+		addReactionsToNetwork(instantiationResults.nonGenericReaction);
+		addReactionsToNetwork(instantiationResults.instantiatedReactions);
 //		Reactions = instantiationResults.nonGenericReaction;
 //		Reactions.addAll(instantiationResults.instantiatedReactions);
 		
@@ -287,10 +286,10 @@ public class ReactionNetwork {
 			list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
 			for (AbstractReactionInstance reaction : Reactions) {
 				if (reaction instanceof ReactionInstance) {
-					if (list.contains(((ReactionInstance)reaction).ReactionFrame.getLocalID())) transportReactionCount++;
+					if (list.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) transportReactionCount++;
 				}
 				else if (reaction instanceof InstantiatedReactionInstance) {
-					if (list.contains(((InstantiatedReactionInstance)reaction).parentReactionFrame.getLocalID())) transportReactionCount++;
+					if (list.contains(((InstantiatedReactionInstance)reaction).parentReactionFrame_.getLocalID())) transportReactionCount++;
 				}
 			}
 		} catch (PtoolsErrorException e) {
@@ -315,9 +314,10 @@ public class ReactionNetwork {
 					//System.err.println("Split " + reaction.getLocalID() + " into " + (locations.size()));
 					//if (debug_) newReactionsFromReactionsSplitByLocation += locations.size()-1;
 					for (String location : locations) {
-						reactionInstances.add(new ReactionInstance(null, reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
+//						reactionInstances.add(new ReactionInstance(null, reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
+						reactionInstances.add(new ReactionInstance(reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
 					}
-				} else reactionInstances.add(new ReactionInstance(reaction));
+				} else reactionInstances.addAll(ReactionInstance.getReactionInstanceFromReactionFrames(reaction));//new ReactionInstance(reaction));
 			} catch (PtoolsErrorException e) {
 				e.printStackTrace();
 			}
@@ -369,9 +369,18 @@ public class ReactionNetwork {
 		
 	}
 	
-	private void addReactions(ArrayList<AbstractReactionInstance> reactions) {
+	private void addReactionsToNetwork(ArrayList<AbstractReactionInstance> reactions) {
 		//TODO Detect and handle duplicates.
-		for (AbstractReactionInstance reaction : reactions) Reactions.add(reaction);
+		for (AbstractReactionInstance reaction : reactions) {
+			if (Reactions.contains(reaction)) {
+				for (AbstractReactionInstance aReaction : Reactions) {
+					if (aReaction.equals(reaction)) {
+						System.err.println("Duplicate Reaction: " + ((ReactionInstance)aReaction).reactionFrame_.getLocalID() + " = " + ((ReactionInstance)reaction).reactionFrame_.getLocalID());
+					}
+				}
+			}
+			Reactions.add(reaction);
+		}
 	}
 	
 	// Internal Classes

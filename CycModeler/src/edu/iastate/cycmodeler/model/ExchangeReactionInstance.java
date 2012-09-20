@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
@@ -20,16 +21,16 @@ import edu.iastate.javacyco.Reaction;
 public class ExchangeReactionInstance extends AbstractReactionInstance {
 
 	public ExchangeReactionInstance(String reactionName, Frame metabolite, String compartment) {
-		this.Name = reactionName;
-		this.Reversible = true;
-		this.ReactionLocation = compartment;
+		this.name_ = reactionName;
+		this.reversible_ = true;
+		this.reactionLocation_ = compartment;
 		
 		HashSet<MetaboliteInstance> reactants = new HashSet<MetaboliteInstance>();
 		reactants.add(new MetaboliteInstance(metabolite, compartment, 1));
 		HashSet<MetaboliteInstance> products = new HashSet<MetaboliteInstance>();
-		products.add(new MetaboliteInstance(metabolite, CycModeler.BoundaryCompartmentName, 1));
-		this.Reactants = reactants;
-		this.Products = products;
+		products.add(new MetaboliteInstance(metabolite, CycModeler.parameters.BoundaryCompartmentName, 1));
+		this.reactants_ = reactants;
+		this.products_ = products;
 		
 //		super(null, null, reactionName, true, null, null, null, false);
 //		HashSet<MetaboliteInstance> reactants = new HashSet<MetaboliteInstance>();
@@ -44,10 +45,10 @@ public class ExchangeReactionInstance extends AbstractReactionInstance {
 	 * The convention in the iAF1260 model is to add the suffix "_LPAREN_e_RPAREN_" to the end of reaction IDs for exchange reactions.
 	 */
 	public String generateReactionID() {
-		String baseID = Name;
+		String baseID = name_;
 		
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
-		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "" + baseID + "_LPAREN_e_RPAREN_");
+		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "_" + baseID + "_LPAREN_e_RPAREN_");
 	}
 	
 	/**
@@ -67,5 +68,11 @@ public class ExchangeReactionInstance extends AbstractReactionInstance {
 	protected void addProduct(MetaboliteInstance product) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public String getGeneProteinReactionRule() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

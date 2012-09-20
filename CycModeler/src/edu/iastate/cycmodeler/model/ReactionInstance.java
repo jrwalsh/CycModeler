@@ -6,6 +6,8 @@ import java.util.HashSet;
 
 
 import edu.iastate.cycmodeler.logic.CycModeler;
+import edu.iastate.cycmodeler.util.ListCombinations;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.Pathway;
@@ -18,41 +20,33 @@ import edu.iastate.javacyco.Reaction;
  * @author Jesse Walsh
  */
 public class ReactionInstance extends AbstractReactionInstance {
-//	public Reaction parentReaction_;
-	public Reaction ReactionFrame;
-//	public String name_;
-//	public boolean reversible_;
-//	public ArrayList<MetaboliteInstance> reactants_;
-//	public ArrayList<MetaboliteInstance> products_;
+	public Reaction reactionFrame_;
 	public String reactantSlot_;
 	public String productSlot_;
 	
-	// Used when converting javacyco reactions to cycmodeler reaction instances
-	public ReactionInstance(Reaction thisReactionFrame) throws PtoolsErrorException {
-		this(null, thisReactionFrame, thisReactionFrame.getCommonName(), thisReactionFrame.isReversible(), null, null, null, true);
+	// Convert javacyco reactions to cycmodeler reactionInstances
+	public static ArrayList<ReactionInstance> getReactionInstanceFromReactionFrames(Reaction reactionFrame) throws PtoolsErrorException {
+		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
+		//TODO if the reaction is in multiple locations, we need to make multiple reactions
+		reactionInstances.add(new ReactionInstance(reactionFrame, reactionFrame.getCommonName(), reactionFrame.isReversible(), null));
+		return reactionInstances;
 	}
 	
-//	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible) {
-//		this(parentReactionFrame, thisReactionFrame, name, reversible, null, null, null, true);
-//	}
-	
-	// Also used when converting javacyco reactions to cycmodeler reaction instances
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation) {
-		this(parentReactionFrame, thisReactionFrame, name, reversible, specificLocation, null, null, true);
+	// Initializes the reactants and products to the values in the biocyc database for the given reactionFrame
+	public ReactionInstance(Reaction reactionFrame, String name, boolean reversible, String specificLocation) {
+		this(reactionFrame, name, reversible, specificLocation, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
+		initializeReactantProductMetaboliteInstances();
 	}
 	
-	// The "all included" constructor
-	public ReactionInstance(Reaction parentReactionFrame, Reaction thisReactionFrame, String name, boolean reversible, String specificLocation, HashSet<MetaboliteInstance> reactants, HashSet<MetaboliteInstance> products, boolean initializeReactantsProducts) {
-//		parentReaction_ = parentReactionFrame;
-		ReactionFrame = thisReactionFrame;
-		this.Name = name;
-		this.Reversible = reversible;
-		ReactionLocation = specificLocation;
-		this.Reactants = reactants;
-		this.Products = products;
+	// Constructor
+	public ReactionInstance(Reaction reactionFrame, String name, boolean reversible, String reactionLocation, HashSet<MetaboliteInstance> reactants, HashSet<MetaboliteInstance> products) {
+		this.reactionFrame_ = reactionFrame;
+		this.name_ = name;
+		this.reversible_ = reversible;
+		this.reactionLocation_ = reactionLocation;
+		this.reactants_ = reactants;
+		this.products_ = products;
 		initializeReactantProductSlotVariables();
-		
-		if (initializeReactantsProducts) initializeReactantProductMetaboliteInstances();
 	}
 
 	
@@ -78,23 +72,23 @@ public class ReactionInstance extends AbstractReactionInstance {
 		ArrayList<MetaboliteInstance> nonGenericProductMetabolites = new ArrayList<MetaboliteInstance>();
 		
 		try {
-			if (ReactionFrame == null) return null;
+			if (reactionFrame_ == null) return null;
 			
-			conn = ReactionFrame.getConnection();
+			conn = reactionFrame_.getConnection();
 			
 			// If reaction has specific forms, then assume those forms are already in the model
-			if (conn.specificFormsOfReaction(ReactionFrame.getLocalID()).size() > 0) return null;//TODO
+			if (conn.specificFormsOfReaction(reactionFrame_.getLocalID()).size() > 0) return null;//TODO should not assume these reactions are already there.  try to add them, and if they are duplicates they will not be added
 			
 			// If reaction cannot be balanced then it cannot be instantiated
-			if (ReactionFrame.hasSlot("CANNOT-BALANCE?") && ReactionFrame.getSlotValue("CANNOT-BALANCE?") != null) return null;
+			if (reactionFrame_.hasSlot("CANNOT-BALANCE?") && reactionFrame_.getSlotValue("CANNOT-BALANCE?") != null) return null;
 			
 			// Sort generic from non-generic reactants and products.
-			for (MetaboliteInstance reactant : Reactants) {
-				if (conn.getFrameType(reactant.MetaboliteFrame.getLocalID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
+			for (MetaboliteInstance reactant : reactants_) {
+				if (conn.getFrameType(reactant.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
 				else nonGenericReactantMetabolites.add(reactant);
 			}
-			for (MetaboliteInstance product : Products) {
-				if (conn.getFrameType(product.MetaboliteFrame.getLocalID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
+			for (MetaboliteInstance product : products_) {
+				if (conn.getFrameType(product.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
 				else nonGenericProductMetabolites.add(product);
 			}
 			
@@ -104,47 +98,47 @@ public class ReactionInstance extends AbstractReactionInstance {
 			//Generate instantiated reactions
 			try {
 				// Generate all possible combinations of instances for the generic terms
-				ArrayList<NamedList> listSet = new ArrayList<NamedList>();
-				for (MetaboliteInstance genericTerm : genericReactants) {
-					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
-					for (Object instance : conn.getClassAllInstances(genericTerm.MetaboliteFrame.getLocalID())) instancesOfGenericTerm.add(instance.toString());
-					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.MetaboliteFrame.getLocalID());
-					NamedList namedList = new NamedList(genericTerm.MetaboliteFrame.getLocalID(), instancesOfGenericTerm);
-					if (!listSet.contains(namedList)) listSet.add(namedList);
-				}
+//				ArrayList<NamedList> listSet = new ArrayList<NamedList>();
+//				for (MetaboliteInstance genericTerm : genericReactants) {
+//					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
+//					for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) instancesOfGenericTerm.add(instance.toString());
+//					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.getMetaboliteID());
+//					NamedList namedList = new NamedList(genericTerm.getMetaboliteID(), instancesOfGenericTerm);
+//					if (!listSet.contains(namedList)) listSet.add(namedList);
+//				}
+//				
+//				for (MetaboliteInstance genericTerm : genericProducts) {
+//					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
+//					for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) instancesOfGenericTerm.add(instance.toString());
+//					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.getMetaboliteID());
+//					NamedList namedList = new NamedList(genericTerm.getMetaboliteID(), instancesOfGenericTerm);
+//					if (!listSet.contains(namedList)) listSet.add(namedList);
+//				}
 				
-				for (MetaboliteInstance genericTerm : genericProducts) {
-					ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
-					for (Object instance : conn.getClassAllInstances(genericTerm.MetaboliteFrame.getLocalID())) instancesOfGenericTerm.add(instance.toString());
-					if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.MetaboliteFrame.getLocalID());
-					NamedList namedList = new NamedList(genericTerm.MetaboliteFrame.getLocalID(), instancesOfGenericTerm);
-					if (!listSet.contains(namedList)) listSet.add(namedList);
-				}
-				
-				ListCombinationResults termCombinations = listCombinations(listSet);
+				ListCombinations termCombinations = ListCombinations.listCombinations(conn, genericReactants, genericProducts);
 				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
-					InstantiatedReactionInstance newReaction = new InstantiatedReactionInstance(ReactionFrame, "", Reversible, ReactionLocation, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
+					InstantiatedReactionInstance newReaction = new InstantiatedReactionInstance(reactionFrame_, "", reversible_, reactionLocation_, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
 					
 					// Non-generic metabolites
 					for (MetaboliteInstance reactant : nonGenericReactantMetabolites) {
-						newReaction.Reactants.add(new MetaboliteInstance(reactant.MetaboliteFrame, reactant.compartment_, reactant.coefficient_));
+						newReaction.reactants_.add(new MetaboliteInstance(reactant.getMetaboliteFrame(), reactant.compartment_, reactant.coefficient_));
 					}
 					for (MetaboliteInstance product : nonGenericProductMetabolites) {
-						newReaction.Products.add(new MetaboliteInstance(product.MetaboliteFrame, product.compartment_, product.coefficient_));
+						newReaction.products_.add(new MetaboliteInstance(product.getMetaboliteFrame(), product.compartment_, product.coefficient_));
 					}
 
 					// Generic metabolites -- Create a new MetaboliteInstance by replacing the old generic metabolite frame object with the new metabolite frame while keeping the compartment and stoichiometry the same 
 					for (MetaboliteInstance genericReactant : genericReactants) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.MetaboliteFrame.getLocalID())));
+						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.getMetaboliteID())));
 						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericReactant.compartment_, genericReactant.coefficient_);
-						newReaction.Reactants.add(newMetabolite);
+						newReaction.reactants_.add(newMetabolite);
 					}
 					for (MetaboliteInstance genericProduct : genericProducts) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.MetaboliteFrame.getLocalID())));
+						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.getMetaboliteID())));
 						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericProduct.compartment_, genericProduct.coefficient_);
-						newReaction.Products.add(newMetabolite);
+						newReaction.products_.add(newMetabolite);
 					}
 					
 					// If the chosen metabolite instances result in this new reaction having a balanced elemental equation, include it in the new
@@ -155,7 +149,7 @@ public class ReactionInstance extends AbstractReactionInstance {
 						for (String term : combinationSet) nameModifier += term + "_";
 						if (nameModifier.endsWith("_")) nameModifier = nameModifier.substring(0, nameModifier.length()-1);
 								
-						newReaction.Name = newReaction.parentReactionFrame.getCommonName() + nameModifier;
+						newReaction.name_ = newReaction.parentReactionFrame_.getCommonName() + nameModifier;
 						newReactions.add(newReaction);
 					}
 				}
@@ -170,65 +164,16 @@ public class ReactionInstance extends AbstractReactionInstance {
 		return null;
 	}
 	
-	/**
-	 * "All possible combinations from a list of sublists problem"
-	 * 
-	 * This function takes in a list of lists and returns every possible combination of 1 item from each sublist.
-	 * Thus, if the lists [1,2,3], [4,5,6], and [7,8,9] were input, then the output would be
-	 * [1,4,7], [1,4,8], [1,4,8], [1,5,7], [1,5,8], [1,5,9] ...
-	 * This method was written as a way to instantiate generic terms in a reaction. Each generic term in a reaction has 
-	 * a list of possible values, and every possible combination of terms is needed.
-	 * 
-	 * @param listOfNamedLists List of NamedList objects. Name of list should be the class metabolite, while the list is
-	 * each instance of the class metabolite.
-	 * @return ListCombinationResults where the name list is a list of all the names of the NamedList input, and a list of tuples
-	 * which represent each possible combination of the items in the named list. Order of names in the NameList matches the order
-	 * of the items in the tuples.
-	 */
-	@SuppressWarnings("unchecked")
-	private ListCombinationResults listCombinations(ArrayList<NamedList> listOfNamedLists) {
-		if (listOfNamedLists == null || listOfNamedLists.size() < 1) return new ListCombinationResults(new ArrayList<String>(), new ArrayList<ArrayList<String>>());
-		
-		NamedList namedList = listOfNamedLists.remove(0);
-		ListCombinationResults results = listCombinations(listOfNamedLists);
-		results.nameList.add(namedList.name);
-		ArrayList<ArrayList<String>> newListOfTuples = new ArrayList<ArrayList<String>>();
-		
-		if (results.listOfTuples.size() > 0) {
-			for (String item : namedList.list) {
-				for (ArrayList<String> tuple : results.listOfTuples) {
-					ArrayList<String> newTuple = new ArrayList<String>();
-					newTuple = (ArrayList<String>)tuple.clone();
-					newTuple.add(item);
-					newListOfTuples.add(newTuple);
-				}
-			}
-		} else {
-			for (String item : namedList.list) {
-				ArrayList<String> tuple = new ArrayList<String>();
-				tuple.add(item);
-				newListOfTuples.add(tuple);
-			}
-		}
-		
-		results.listOfTuples = newListOfTuples;
-		
-		return results;
-	}
 	
 	/**
 	 * Get slot name of Reaction reactants and products depending on reaction direction. Reversible reactions report reactant slot as "LEFT".
 	 * Only in the case of reaction-direction given as "RIGHT-TO-LEFT" do we switch the reactant/product slots.
 	 */
 	protected void initializeReactantProductSlotVariables() {
-		Reaction reaction = null;
-		if (ReactionFrame != null) reaction = ReactionFrame;
-//		else if (parentReaction_ != null) reaction = parentReaction_;
-		
 		try {
-			assert reaction != null;
+			assert reactionFrame_ != null;
 			
-			if (reaction.getSlotValue("REACTION-DIRECTION") == null || !reaction.getSlotValue("REACTION-DIRECTION").equalsIgnoreCase("RIGHT-TO-LEFT")) {
+			if (reactionFrame_.getSlotValue("REACTION-DIRECTION") == null || !reactionFrame_.getSlotValue("REACTION-DIRECTION").equalsIgnoreCase("RIGHT-TO-LEFT")) {
 				reactantSlot_ = "LEFT";
 				productSlot_ = "RIGHT";
 			} else {
@@ -246,11 +191,11 @@ public class ReactionInstance extends AbstractReactionInstance {
 	 */
 	public String generateReactionID() {
 		String baseID = "";
-		if (ReactionFrame != null) baseID = ReactionFrame.getLocalID();
-		else baseID = Name;
+		if (reactionFrame_ != null) baseID = reactionFrame_.getLocalID();
+		else baseID = name_;
 		
-		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "" + baseID);
-		else return CycModeler.convertToSBMLSafe(CycModeler.ReactionPrefix + "_" + baseID);
+		if (baseID.startsWith("_")) return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "" + baseID);
+		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "_" + baseID);
 	}
 	
 	/**
@@ -261,8 +206,8 @@ public class ReactionInstance extends AbstractReactionInstance {
 	@SuppressWarnings("unchecked")
 	protected boolean isGenericReaction(JavacycConnection conn) {
 		try {
-			ArrayList<String> leftMetabolites = ReactionFrame.getSlotValues("LEFT");
-			ArrayList<String> rightMetabolites = ReactionFrame.getSlotValues("RIGHT");
+			ArrayList<String> leftMetabolites = reactionFrame_.getSlotValues("LEFT");
+			ArrayList<String> rightMetabolites = reactionFrame_.getSlotValues("RIGHT");
 			
 			for (String left : leftMetabolites) {
 				if (conn.getFrameType(left).toUpperCase().equals(":CLASS")) return true;
@@ -299,10 +244,8 @@ public class ReactionInstance extends AbstractReactionInstance {
 	 * @throws PtoolsErrorException
 	 */
 	public String reactionGeneRule(boolean asBNumber) throws PtoolsErrorException {
-		Reaction reaction = ReactionFrame;
-		
-		String reactionID = reaction.getLocalID();
-		JavacycConnection conn = reaction.getConnection();
+		String reactionID = reactionFrame_.getLocalID();
+		JavacycConnection conn = reactionFrame_.getConnection();
 		
 		String orRule = "";
 		for (Object enzyme : conn.enzymesOfReaction(reactionID)) {
@@ -328,40 +271,40 @@ public class ReactionInstance extends AbstractReactionInstance {
 	}
 	
 	/**
-	 * Overwrite existing reactants_ and products_ by looking up thisReactionFrame_ in the database and creating MetaboliteInstances for all
+	 * Overwrite existing reactants_ and products_ by looking up reactionFrame_ in the biocyc database and creating MetaboliteInstances for all
 	 * reactants and products found there for this reaction.
 	 */
 	@SuppressWarnings("unchecked")
 	private void initializeReactantProductMetaboliteInstances() {
-		Reactants = new HashSet<MetaboliteInstance>();
-		Products = new HashSet<MetaboliteInstance>();
+		reactants_ = new HashSet<MetaboliteInstance>();
+		products_ = new HashSet<MetaboliteInstance>();
 		try {
-			JavacycConnection conn = ReactionFrame.getConnection();
+			JavacycConnection conn = reactionFrame_.getConnection();
 			
-			ArrayList<String> reactantIDs = ReactionFrame.getSlotValues(reactantSlot_);
+			ArrayList<String> reactantIDs = reactionFrame_.getSlotValues(reactantSlot_);
 			for (String reactantID : reactantIDs) {
 				Frame metabolite = Frame.load(conn, reactantID);
 				String compartment = getCompartmentOfMetabolite(reactantID, reactantSlot_);
 				int coeficient = 1;
 				try {
-					coeficient = Integer.parseInt(conn.getValueAnnot(ReactionFrame.getLocalID(), reactantSlot_, reactantID, "COEFFICIENT"));
+					coeficient = Integer.parseInt(conn.getValueAnnot(reactionFrame_.getLocalID(), reactantSlot_, reactantID, "COEFFICIENT"));
 				} catch (Exception e) {
 					coeficient = 1;
 				}
-				Reactants.add(new MetaboliteInstance(metabolite, compartment, coeficient));
+				reactants_.add(new MetaboliteInstance(metabolite, compartment, coeficient));
 			}
 			
-			ArrayList<String> productIDs = ReactionFrame.getSlotValues(productSlot_);
+			ArrayList<String> productIDs = reactionFrame_.getSlotValues(productSlot_);
 			for (String productID : productIDs) {
 				Frame metabolite = Frame.load(conn, productID);
 				String compartment = getCompartmentOfMetabolite(productID, productSlot_);
 				int coeficient = 1;
 				try {
-					coeficient = Integer.parseInt(conn.getValueAnnot(ReactionFrame.getLocalID(), productSlot_, productID, "COEFFICIENT"));
+					coeficient = Integer.parseInt(conn.getValueAnnot(reactionFrame_.getLocalID(), productSlot_, productID, "COEFFICIENT"));
 				} catch (Exception e) {
 					coeficient = 1;
 				}
-				Products.add(new MetaboliteInstance(metabolite, compartment, coeficient));
+				products_.add(new MetaboliteInstance(metabolite, compartment, coeficient));
 			}
 		} catch (PtoolsErrorException e) {
 			e.printStackTrace();
@@ -379,14 +322,14 @@ public class ReactionInstance extends AbstractReactionInstance {
 	 */
 	@SuppressWarnings("unchecked")
 	protected String getCompartmentOfMetabolite(String metaboliteID, String slot) {
-		Reaction reaction = ReactionFrame;
+		Reaction reaction = reactionFrame_;
 		String compartment = "";
 		try {
-			JavacycConnection conn = ReactionFrame.getConnection();
+			JavacycConnection conn = reactionFrame_.getConnection();
 			ArrayList<String> locations = reaction.getSlotValues("RXN-LOCATIONS");
 
 			if (locations.isEmpty()) {
-				compartment = CycModeler.DefaultCompartment;
+				compartment = CycModeler.parameters.DefaultCompartment;
 			} else if (locations.size() == 1) {
 				boolean isSpace;
 				try { 
@@ -410,11 +353,11 @@ public class ReactionInstance extends AbstractReactionInstance {
 				// specificLocation variable.  If specificLocation does not match, then we only process the first reaction location in the list.
 				// Reactions that occur in multiple compartments should be separate reactions.
 				int locationIndex;
-				if (ReactionLocation == null || ReactionLocation.isEmpty() || locations.indexOf(ReactionLocation) == -1) {
+				if (reactionLocation_ == null || reactionLocation_.isEmpty() || locations.indexOf(reactionLocation_) == -1) {
 					locationIndex = 0;
 					System.err.println("Location information expected but not provided.");
 				}
-				else locationIndex = locations.indexOf(ReactionLocation);
+				else locationIndex = locations.indexOf(reactionLocation_);
 
 				boolean isSpace;
 				try { 
@@ -442,7 +385,7 @@ public class ReactionInstance extends AbstractReactionInstance {
 		// this may not always be correct, it helps more problems than it causes.  In particular, with electron transfer reactions, the actual location
 		// of the metabolite may be in the membrane, but we assume the cytoplasm for network connectivity reasons.
 		if (compartment == null || compartment.equalsIgnoreCase("")) {
-			compartment = CycModeler.DefaultCompartment;
+			compartment = CycModeler.parameters.DefaultCompartment;
 //			System.err.println("Null compartment here, assuming default compartment: " + reaction.getLocalID());
 		}
 		return compartment;
@@ -454,68 +397,70 @@ public class ReactionInstance extends AbstractReactionInstance {
 		// TODO Auto-generated method stub
 		
 	}
-
 	@Override
 	protected void addProduct(MetaboliteInstance product) {
 		// TODO Auto-generated method stub
 		
 	}
-	
-	
-	// Internal Classes
-	/**
- 	 * Internal class to facilitate generic reaction instantiation by holding a metabolite class as "name" and all
- 	 * metabolite instances of the class in "list".
- 	 * 
- 	 * @author Jesse Walsh
- 	 */
- 	private class NamedList {
-		public String name;
-		public ArrayList<String> list;
-		
-		public NamedList(String name, ArrayList<String> list) {
-			this.name = name;
-			this.list = list;
-		}
-		
-		/**
-		A shallow test of equality. Test the names of two NamedLists for equality. Does not compare the list itself.
-		@return true if both NamedLists have the name. 
-		*/
-		@Override public boolean equals(Object aThat) {
-			//Based on example at http://www.javapractices.com/topic/TopicAction.do?Id=17
-			
-		    //Check for self-comparison
-		    if (this == aThat) return true;
-
-		    //Check for similar class
-		    if (!(aThat instanceof NamedList)) return false;
-		    
-		    //Cast to native type
-		    NamedList that = (NamedList)aThat;
-
-		    //Compare frame IDs
-		    return this.name.equals(that.name);
-		  }
-
-		@Override public int hashCode() {
-			return this.name.hashCode();
-		  }
+	@Override
+	public String getGeneProteinReactionRule() {
+		// TODO Auto-generated method stub
+		return null;
 	}
+	
+//	// Internal Classes
+//	/**
+// 	 * Internal class to facilitate generic reaction instantiation by holding a metabolite class as "name" and all
+// 	 * metabolite instances of the class in "list".
+// 	 * 
+// 	 * @author Jesse Walsh
+// 	 */
+// 	private class NamedList {
+//		public String name;
+//		public ArrayList<String> list;
+//		
+//		public NamedList(String name, ArrayList<String> list) {
+//			this.name = name;
+//			this.list = list;
+//		}
+//		
+//		/**
+//		A shallow test of equality. Test the names of two NamedLists for equality. Does not compare the list itself.
+//		@return true if both NamedLists have the name. 
+//		*/
+//		@Override public boolean equals(Object aThat) {
+//			//Based on example at http://www.javapractices.com/topic/TopicAction.do?Id=17
+//			
+//		    //Check for self-comparison
+//		    if (this == aThat) return true;
+//
+//		    //Check for similar class
+//		    if (!(aThat instanceof NamedList)) return false;
+//		    
+//		    //Cast to native type
+//		    NamedList that = (NamedList)aThat;
+//
+//		    //Compare frame IDs
+//		    return this.name.equals(that.name);
+//		  }
+//
+//		@Override public int hashCode() {
+//			return this.name.hashCode();
+//		  }
+//	}
  	
- 	/**
- 	 * Internal class to facilitate generic reaction instantiation by holding the results of the listCombinations method.
- 	 * 
- 	 * @author Jesse Walsh
- 	 */
- 	private class ListCombinationResults {
- 		public ArrayList<String> nameList;
-		public ArrayList<ArrayList<String>> listOfTuples;
-		
-		public ListCombinationResults(ArrayList<String> nameList, ArrayList<ArrayList<String>> listOfTuples) {
-			this.nameList = nameList;
-			this.listOfTuples = listOfTuples;
-		}
- 	}
-
+// 	/**
+// 	 * Internal class to facilitate generic reaction instantiation by holding the results of the listCombinations method.
+// 	 * 
+// 	 * @author Jesse Walsh
+// 	 */
+// 	private class ListCombinationResults {
+// 		public ArrayList<String> nameList;
+//		public ArrayList<ArrayList<String>> listOfTuples;
+//		
+//		public ListCombinationResults(ArrayList<String> nameList, ArrayList<ArrayList<String>> listOfTuples) {
+//			this.nameList = nameList;
+//			this.listOfTuples = listOfTuples;
+//		}
+// 	}
 }

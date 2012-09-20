@@ -1,7 +1,16 @@
 package edu.iastate.cycmodeler;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Properties;
+
 import edu.iastate.cycmodeler.logic.CycModeler;
-import edu.iastate.cycmodeler.util.Globals;
+import edu.iastate.cycmodeler.logic.CycModeler.Setting;
+import edu.iastate.cycmodeler.util.MyParameters;
 import edu.iastate.javacyco.JavacycConnection;
 
 /**
@@ -10,7 +19,6 @@ import edu.iastate.javacyco.JavacycConnection;
  * @author Jesse Walsh
  *
  */
-
 public class Main {
 	static private JavacycConnection conn = null;
 	
@@ -78,8 +86,8 @@ public class Main {
 		String configFile = args[0];
 		
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(Globals.connectionStringLocal,Globals.defaultPort);
-		conn.selectOrganism(Globals.organismStringK12);
+		conn = new JavacycConnection(MyParameters.connectionStringLocal,MyParameters.defaultPort); //TODO connection info from commandline/configfile
+		conn.selectOrganism(MyParameters.organismStringK12);
 		run(configFile);
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
@@ -90,7 +98,9 @@ public class Main {
 	 * This method initializes a CycModeler object and calls its methods.
 	 */
 	public static void run(String configFile) {
-		CycModeler modeler = new CycModeler(conn, configFile);
+		MyParameters parameters = new MyParameters();
+		parameters.initializeFromConfigFile(configFile);
+		CycModeler modeler = new CycModeler(conn, parameters);
 		modeler.createGenomeScaleModelFromEcoCyc();
 	}
 }
