@@ -75,4 +75,10 @@ public class ExchangeReactionInstance extends AbstractReactionInstance {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public String printReaction() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

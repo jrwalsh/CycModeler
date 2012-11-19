@@ -2,6 +2,9 @@ package edu.iastate.cycmodeler.model;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 
 import edu.iastate.cycmodeler.logic.CycModeler;
 import edu.iastate.cycmodeler.util.MyParameters;
@@ -116,30 +119,56 @@ public class MetaboliteInstance {
 		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.SpeciesPrefix + "_" + baseID + "_" + CycModeler.parameters.CompartmentAbrevs.get(compartment_));
 	}
 	
+//	@Override
+//	public int hashCode() {
+//		final int prime = 31;
+//		int result = 1;
+//		result = prime * result
+//				+ ((metaboliteFrame_ == null) ? 0 : metaboliteFrame_.getLocalID().hashCode());
+//		return result;
+//	}
+
+//	@Override
+//	public boolean equals(Object obj) {
+//		if (this == obj)
+//			return true;
+//		if (obj == null)
+//			return false;
+//		if (getClass() != obj.getClass())
+//			return false;
+//		MetaboliteInstance other = (MetaboliteInstance) obj;
+//		if (metaboliteFrame_ == null) {
+//			if (other.metaboliteFrame_ != null)
+//				return false;
+//		} else if (!metaboliteFrame_.getLocalID().equals(other.metaboliteFrame_.getLocalID()))
+//			return false;
+//		return true;
+//	}
+	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((metaboliteFrame_ == null) ? 0 : metaboliteFrame_.getLocalID().hashCode());
-		return result;
+		return new HashCodeBuilder(17, 31).
+	        append(metaboliteFrame_.getLocalID()).
+	        append(compartment_).
+	        append(coefficient_).
+	        toHashCode();
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (obj == this)
+			return true;
+		if (obj.getClass() != getClass())
 			return false;
+
 		MetaboliteInstance other = (MetaboliteInstance) obj;
-		if (metaboliteFrame_ == null) {
-			if (other.metaboliteFrame_ != null)
-				return false;
-		} else if (!metaboliteFrame_.getLocalID().equals(other.metaboliteFrame_.getLocalID()))
-			return false;
-		return true;
+		return new EqualsBuilder().
+				append(this.metaboliteFrame_.getLocalID(), other.metaboliteFrame_.getLocalID()).
+				append(this.compartment_, other.compartment_).
+				append(this.coefficient_, other.coefficient_).
+				isEquals();
 	}
 
 	

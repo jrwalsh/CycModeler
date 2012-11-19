@@ -142,6 +142,20 @@ public abstract class AbstractReactionInstance {
 		return true;
 	}
 
+	protected boolean isReactionGeneric() {
+		try {
+			for (MetaboliteInstance reactant : reactants_) {
+				if (reactant.getMetaboliteFrame().isClassFrame()) return true;
+			}
+			for (MetaboliteInstance product : products_) {
+				if (product.getMetaboliteFrame().isClassFrame()) return true;
+			}
+		} catch (PtoolsErrorException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 	@Override
 	public int hashCode() {
 		return new HashCodeBuilder(17, 31).
@@ -172,4 +186,5 @@ public abstract class AbstractReactionInstance {
 	public abstract String getGeneProteinReactionRule();
 	protected abstract void addReactant(MetaboliteInstance reactant);
 	protected abstract void addProduct(MetaboliteInstance product);
+	public abstract String printReaction();
 }

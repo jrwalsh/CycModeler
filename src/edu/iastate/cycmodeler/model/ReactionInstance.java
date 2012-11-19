@@ -143,7 +143,7 @@ public class ReactionInstance extends AbstractReactionInstance {
 					
 					// If the chosen metabolite instances result in this new reaction having a balanced elemental equation, include it in the new
 					// reactionInstances to be returned.
-					if (newReaction.isReactionBalanced()) {
+					if (newReaction.isReactionBalanced() && !newReaction.isReactionGeneric()) {
 						// We need unique names for the newly instantiated reactions. Append the names of the instantiated metabolites to the reaction name.
 						String nameModifier = "";
 						for (String term : combinationSet) nameModifier += term + "_";
@@ -407,6 +407,19 @@ public class ReactionInstance extends AbstractReactionInstance {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	@Override
+	public String printReaction() {
+		String printString = "";
+		printString += "ReactionInstance" + "\t" + this.name_ + "\t" + this.reactionFrame_ + "\t";
+		for (MetaboliteInstance reactant : reactants_) {
+			printString += reactant.getMetaboliteID();
+		}
+		for (MetaboliteInstance product : products_) {
+			printString += product.getMetaboliteID();
+		}
+		return printString;
+	}
+	
 	
 //	// Internal Classes
 //	/**
