@@ -78,7 +78,7 @@ public class Report {
 	}
 	
 	public String report() {
-		String reportString = "Writing statistics ...";
+		String reportString = "Writing statistics ...\n";
 		reportString += "All reactions : " + totalInitialReactionsCount + "\n";
 		reportString += "Removed reactions due to filtering : " + filteredReactions + "\n";
 		reportString += "Generic reactions found : " + genericReactionsFound + "\n";
