@@ -13,6 +13,7 @@ import edu.iastate.cycmodeler.model.MetaboliteInstance;
 import edu.iastate.cycmodeler.model.ReactionInstance;
 import edu.iastate.cycmodeler.model.ReactionNetwork;
 import edu.iastate.cycmodeler.util.MyParameters;
+import edu.iastate.cycmodeler.util.ReactionChooser;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
@@ -72,63 +73,73 @@ public class CycModeler {
 	 * SBML file.
 	 */
 	public void createGenomeScaleModelFromEcoCyc() {
+		// 1) Create blank model
+		System.out.println("Generating blank model ...");
+		SBMLDocument doc = createBlankSBMLDocument(parameters.ModelName, parameters.DefaultSBMLLevel, parameters.DefaultSBMLVersion);
+		
+		// 2) Load all reactions
+//		System.out.println("Loading all reactions ...");
+//		ArrayList<Reaction> allReactions = Reaction.all(conn);
+//		ReactionNetwork reactionNetwork = ReactionNetwork.getReactionNetwork(conn, allReactions);
+		
+		// 3) Filter unwanted reactions
+//		System.out.println("Filtering unwanted reactions ...");
+		System.out.println("Initializing reaction network ...");
+		ArrayList<String> classToFilter = new ArrayList<String>();
+		classToFilter.add("|Polynucleotide-Reactions|");
+		classToFilter.add("|Protein-Reactions|"); //TODO filter more stuff
+		classToFilter.add("|RNA-Reactions|");
+		ArrayList<String> metaboliteClassToFilter = new ArrayList<String>();
+		metaboliteClassToFilter.add("|Proteins|");
+		metaboliteClassToFilter.add("|Nucleotides|"); //TODO filter more stuff
+		metaboliteClassToFilter.add("|POLYPEPTIDE|");
+		ArrayList<String> reactionsToFilter = new ArrayList<String>();
+		reactionsToFilter.add("RXN0-5266");//Duplicate reactants/products to RXN0-5268              //TODO Verify these duplicate removals (and consider merging instead)
+		reactionsToFilter.add("RXN0-5330");//Duplicate reactants/products to NADH-DEHYDROG-A-RXN
+		reactionsToFilter.add("ACID-PHOSPHATASE-RXN");//Merge with ALKAPHOSPHA-RXN
+		reactionsToFilter.add("RXN0-6370");//Should not conflict with RXN0-5242
+		reactionsToFilter.add("RXN0-5255");//Should not conflict with RXN0-3283
+		reactionsToFilter.add("RXN0-5254");//Should not conflict with TRANS-RXN0-234
+		reactionsToFilter.add("RXN0-5244");//Should not conflict with TRANS-RXN0-237
+		ReactionNetwork reactionNetwork = new ReactionNetwork(conn);
+//		reactionNetwork.initializeGenomeScaleReactionNetwork(classToFilter, reactionsToFilter); //TODO filtering should be part of the config file
+//		reactionNetwork.initializeReactionNetwork();
+		ReactionChooser reactionChooser = new ReactionChooser(conn);
 		try {
-			// 1) Create blank model
-			System.out.println("Generating blank model ...");
-			SBMLDocument doc = createBlankSBMLDocument(parameters.ModelName, parameters.DefaultSBMLLevel, parameters.DefaultSBMLVersion);
-			
-			// 2) Load all reactions
-			System.out.println("Loading all reactions ...");
-			ArrayList<Reaction> allReactions = Reaction.all(conn);
-			ReactionNetwork reactionNetwork = ReactionNetwork.getReactionNetwork(conn, allReactions);
-			
-			// 3) Filter unwanted reactions
-			System.out.println("Filtering unwanted reactions ...");
-			ArrayList<String> classToFilter = new ArrayList<String>();
-			classToFilter.add("|Polynucleotide-Reactions|");
-			classToFilter.add("|Protein-Reactions|"); //TODO filter more stuff
-			reactionNetwork.filterReactions(classToFilter, null); //TODO filtering should be part of the config file
-			
-			// 4) Find and instantiate generics
-			System.out.println("Instantiating generic reactions ...");
-			reactionNetwork.generateSpecificReactionsFromGenericReactions();
-			
-			// 5) Add diffusion reactions
-			System.out.println("Adding diffusion reactions ...");
-			reactionNetwork.addPassiveDiffusionReactions("CCO-PERI-BAC" , "CCO-EXTRACELLULAR", (float) 610.00); //TODO again, from a config file
-			
-			// 6) Add boundaries
-			System.out.println("Adding boundary reactions ...");
-			reactionNetwork.addBoundaryReactionsByCompartment(parameters.ExternalCompartmentName);
-			
-			// 7) Generate SBML model
-			System.out.println("Generating SBML model ...");
-			generateSBMLModel(doc, reactionNetwork);
-			
-			// 8) Write revised model.
-			System.out.println("Writing output ...");
-			SBMLWriter writer = new SBMLWriter();
-			writer.writeSBML(doc, parameters.OutputDirectory + "written_SBML.xml"); //TODO again, config file for file name
-			
-			// Print statistics
-			reactionNetwork.printNetworkStatistics();
-			
-			System.out.println("Done!");
+			reactionChooser.getAllReactions();
+			reactionChooser.removeReactionsByClass(classToFilter);
+			reactionChooser.removeReactionsByMetaboliteClass(metaboliteClassToFilter);
+			reactionChooser.removeSpecificReactions(reactionsToFilter);
 		} catch (PtoolsErrorException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * TODO
-	 */
-	public void createReactionScaleModelFromEcoCyc() {
-	}
-	
-	/**
-	 * TODO
-	 */
-	public void createCustomModel() {
+		reactionNetwork.importJavacycReactions(reactionChooser.getReactionList());
+		
+		// 4) Find and instantiate generics
+		System.out.println("Instantiating generic reactions ...");
+		reactionNetwork.generateSpecificReactionsFromGenericReactions();
+		
+		// 5) Add diffusion reactions
+		System.out.println("Adding diffusion reactions ...");
+		reactionNetwork.addPassiveDiffusionReactions("CCO-PERI-BAC" , "CCO-EXTRACELLULAR", (float) 610.00); //TODO again, from a config file
+		
+		// 6) Add boundaries
+		System.out.println("Adding boundary reactions ...");
+		reactionNetwork.addBoundaryReactionsByCompartment(parameters.ExternalCompartmentName);
+		
+		// 7) Generate SBML model
+		System.out.println("Generating SBML model ...");
+		generateSBMLModel(doc, reactionNetwork);
+		
+		// 8) Write revised model.
+		System.out.println("Writing output ...");
+		SBMLWriter writer = new SBMLWriter();
+		writer.writeSBML(doc, parameters.OutputDirectory + "written_SBML.xml"); //TODO again, config file for file name
+		
+		// Print statistics
+		reactionNetwork.printNetworkStatistics();
+		
+		System.out.println("Done!");
 	}
 	
 	
@@ -416,60 +427,4 @@ public class CycModeler {
 		}
  	}
 	
-	
-	
-	
-	
-	// *** SANDBOX *** \\
-//	private void printBoundaryReactionMetaboliteList(ArrayList<ReactionInstance> reactions, String fileName) {
-//		String outString = "";
-//		try {
-//			for (ReactionInstance reaction : reactions) {
-//				if (reaction.Reactants.size() > 0) {
-//					Frame m = reaction.Reactants.get(0).MetaboliteFrame;
-//					outString += m.getLocalID() + "\t" + m.getCommonName() + "\t" + reaction.Reactants.get(0).chemicalFormula_ + "\t";
-//					
-//					String keggID = "";
-//					ArrayList dblinks = null;
-//					if (m.hasSlot("DBLINKS")) dblinks = m.getSlotValues("DBLINKS");
-//					for (Object dblink : dblinks) {
-//						ArrayList<String> dbLinkArray = ((ArrayList<String>)dblink); 
-//						if (dbLinkArray.get(0).contains("LIGAND-CPD")) {
-//							keggID += dbLinkArray.get(1).replace("\"", "") + "\t";
-//						}
-//					}
-//					keggID = keggID.split("\t")[0]; // Many kegg id entries are duplicated in EcoCyc v15.0, but we only need one
-//					outString += keggID + "\n";
-//				}
-//			}
-//		} catch (PtoolsErrorException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		printString(OutputDirectory + fileName, outString);
-//	}
-	
-	
-	// Internal Classes
-	public enum Setting	{
-		OUTPUTDIRECTORY,
-		DEFAULTCOMPARTMENT,
-		DEFAULTSBMLLEVEL,
-		DEFAULTSBMLVERSION,
-		MODELNAME,
-		BOUNDARYCOMPARTMENTNAME,
-		EXCHANGEREACTIONSUFFIX,
-		SPECIESPREFIX,
-		REACTIONPREFIX,
-		COMPARTMENTABREVS,
-	    NOVALUE;
-
-	    public static Setting value(String setting) {
-	        try {
-	            return valueOf(setting.toUpperCase());
-	        } catch (Exception e) {
-	            return NOVALUE;
-	        }
-	    }  
-	}
 }

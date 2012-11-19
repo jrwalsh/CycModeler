@@ -7,8 +7,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 
-import edu.iastate.cycmodeler.logic.CycModeler.Setting;
-
 public class MyParameters {
 	// Global static variables
 	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
@@ -142,5 +140,28 @@ public class MyParameters {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	// Internal Classes
+	public enum Setting	{
+		OUTPUTDIRECTORY,
+		DEFAULTCOMPARTMENT,
+		DEFAULTSBMLLEVEL,
+		DEFAULTSBMLVERSION,
+		MODELNAME,
+		BOUNDARYCOMPARTMENTNAME,
+		EXCHANGEREACTIONSUFFIX,
+		SPECIESPREFIX,
+		REACTIONPREFIX,
+		COMPARTMENTABREVS,
+	    NOVALUE;
+
+	    public static Setting value(String setting) {
+	        try {
+	            return valueOf(setting.toUpperCase());
+	        } catch (Exception e) {
+	            return NOVALUE;
+	        }
+	    }  
 	}
 }
