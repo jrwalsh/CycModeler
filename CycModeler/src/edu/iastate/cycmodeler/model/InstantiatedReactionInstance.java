@@ -65,4 +65,17 @@ public class InstantiatedReactionInstance extends AbstractReactionInstance {
 		return null;
 	}
 
+	@Override
+	public String printReaction() {
+		String printString = "";
+		printString += "InstantiatedReactionInstance" + "\t" + this.name_ + "\t" + this.parentReactionFrame_ + "\t";
+		for (MetaboliteInstance reactant : reactants_) {
+			printString += reactant.getMetaboliteID();
+		}
+		for (MetaboliteInstance product : products_) {
+			printString += product.getMetaboliteID();
+		}
+		return printString;
+	}
+
 }

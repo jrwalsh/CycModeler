@@ -23,13 +23,17 @@ public class ReactionNetwork {
 	// Network modification statistics
 	private Report report;
 	
-	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
-		ArrayList<AbstractReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
-		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
-		return reactionNetwork;
+//	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
+//		ArrayList<AbstractReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
+//		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
+//		return reactionNetwork;
+//	}
+	
+	public ReactionNetwork (JavacycConnection connection) {
+		this(connection, new ArrayList<AbstractReactionInstance>());
 	}
 	
-	public ReactionNetwork (JavacycConnection connection, ArrayList<AbstractReactionInstance> reactions) {
+	private ReactionNetwork (JavacycConnection connection, ArrayList<AbstractReactionInstance> reactions) {
 		conn = connection;
 		this.Reactions = new HashSet<AbstractReactionInstance>();
 		addReactionsToNetwork(reactions);
@@ -178,46 +182,127 @@ public class ReactionNetwork {
 		return exchangeReactions;
 	}
 	
-	/**
-	 * Remove all Reactions from the ArrayList reactions_ which are either an instance of any of the EcoCyc classes in classToFilter, or
-	 * are explicitly named with their EcoCyc Frame ID in the reactionsToFilter list. 
-	 * 
-	 * @param Reactions List of Reactions to which the filter will be applied
-	 * @param classToFilter EcoCyc Frame ID of a class frame, instances of which should be removed from reactions
-	 * @param reactionsToFilter EcoCyc Frame ID of a reaction frame which should be removed from reactions
-	 * @return FilterResults containing the filtered reaction list and a list of reactions actually removed
-	 */
-	public FilterResults filterReactions(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
-		ArrayList<String> filter = new ArrayList<String>();
-		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
-		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
-		
-		try {
-			if (classToFilter != null) {
-				for (String reactionClass : classToFilter) {
-					for (Object reaction : conn.getClassAllInstances(reactionClass)) filter.add(reaction.toString());
-				}
-			}
-			
-			if (reactionsToFilter != null) {
-				for (String reaction : reactionsToFilter) filter.add(reaction);
-			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		
-		for (AbstractReactionInstance reaction : Reactions) {
-			if (reaction instanceof ReactionInstance) {
-				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
-				else keepList.add(reaction);
-			}
-		}
-		
-		addReactionsToNetwork(keepList);
-		report.setFilteredReactions(removedList.size());
-		
-		return new FilterResults(keepList, removedList);
-	}
+//	public FilterResults initializeGenomeScaleReactionNetwork(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
+//		ArrayList<String> filter = new ArrayList<String>();
+//		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
+//		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
+//		ArrayList<AbstractReactionInstance> allReactions = new ArrayList<AbstractReactionInstance>();
+//		
+//		try {
+//			allReactions = reactionListToReactionInstances(Reaction.all(conn));
+//
+//			if (classToFilter != null) {
+//				for (String reactionClass : classToFilter) {
+//					for (Object reaction : conn.getClassAllInstances(reactionClass)) filter.add(reaction.toString());
+//				}
+//			}
+//			
+//			if (reactionsToFilter != null) {
+//				for (String reaction : reactionsToFilter) filter.add(reaction);
+//			}
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		
+//		for (AbstractReactionInstance reaction : allReactions) {
+//			if (reaction instanceof ReactionInstance) {
+//				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
+//				else keepList.add(reaction);
+//			}
+//		}
+//		
+//		for (AbstractReactionInstance reaction : keepList) {
+////			if any reactant or product is an instance of |Proteins|, |DNA|, |RNA|, than filter reaction out.
+//			for (MetaboliteInstance reactant : reaction.reactants_) {
+//				if ()
+//			}
+//		}
+//		
+//		addReactionsToNetwork(keepList);
+//		report.setFilteredReactions(removedList.size());
+//		
+//		return new FilterResults(keepList, removedList);
+//	}
+	
+//	//TODO rewrite with generic class/reaction/metabolite class
+//	public void initializeReactionNetwork() {
+//		ArrayList<AbstractReactionInstance> keepList2 = new ArrayList<AbstractReactionInstance>();
+//		
+//		try {
+//			ArrayList<Reaction> dbReactions = Reaction.all(conn);
+//			dbReactions.
+//			ArrayList<ReactionInstance> allReactions = reactionListToReactionInstances(Reaction.all(conn));
+//			ArrayList<ReactionInstance> keepList = new ArrayList<ReactionInstance>();
+//			ArrayList<ReactionInstance> removedList = new ArrayList<ReactionInstance>();
+//			
+//			for (ReactionInstance reaction : allReactions) {
+//				if (reaction.reactionFrame_.isGFPClass("|Polynucleotide-Reactions|")) removedList.add(reaction);
+//				else if (reaction.reactionFrame_.isGFPClass("|Protein-Reactions|")) removedList.add(reaction);
+//				else if (reaction.reactionFrame_.isGFPClass("|RNA-Reactions|")) removedList.add(reaction);
+//				else keepList.add(reaction);
+//			}
+//			
+//			for (ReactionInstance reaction : keepList) {
+//				ArrayList<MetaboliteInstance> mets = new ArrayList<MetaboliteInstance>();
+//				mets.addAll(reaction.reactants_);
+//				mets.addAll(reaction.products_);
+//				boolean match = false;
+//				for (MetaboliteInstance met : mets) {
+//					if (met.getMetaboliteFrame().isGFPClass("|Proteins|")) match = true;
+////					else if (met.getMetaboliteFrame().isGFPClass("|DNA-N|"))
+//					else if (met.getMetaboliteFrame().isGFPClass("|Nucleotides|")) match = true;
+//				}
+//				if (match) removedList.add(reaction);
+//				else keepList2.add(reaction);
+//			}
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		
+//		addReactionsToNetwork(keepList2);
+//	}
+	
+	
+//	/**
+//	 * Remove all Reactions from the ArrayList reactions_ which are either an instance of any of the EcoCyc classes in classToFilter, or
+//	 * are explicitly named with their EcoCyc Frame ID in the reactionsToFilter list. 
+//	 * 
+//	 * @param Reactions List of Reactions to which the filter will be applied
+//	 * @param classToFilter EcoCyc Frame ID of a class frame, instances of which should be removed from reactions
+//	 * @param reactionsToFilter EcoCyc Frame ID of a reaction frame which should be removed from reactions
+//	 * @return FilterResults containing the filtered reaction list and a list of reactions actually removed
+//	 */
+//	public FilterResults filterReactions(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
+//		ArrayList<String> filter = new ArrayList<String>();
+//		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
+//		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
+//		
+//		try {
+//			if (classToFilter != null) {
+//				for (String reactionClass : classToFilter) {
+//					for (Object reaction : conn.getClassAllInstances(reactionClass)) filter.add(reaction.toString());
+//				}
+//			}
+//			
+//			if (reactionsToFilter != null) {
+//				for (String reaction : reactionsToFilter) filter.add(reaction);
+//			}
+//		} catch (PtoolsErrorException e) {
+//			e.printStackTrace();
+//		}
+//		
+//		for (AbstractReactionInstance reaction : this.Reactions) {
+//			if (reaction instanceof ReactionInstance) {
+//				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
+//				else keepList.add(reaction);
+//			}
+//		}
+//		
+//		addReactionsToNetwork(keepList);
+//		report.setFilteredReactions(removedList.size());
+//		
+//		return new FilterResults(keepList, removedList);
+//	}
 	
 	/**
 	 * Will take in a list of reactions, find any generic reactions (according to EcoCyc), and will attempt to return instances of the
@@ -248,7 +333,9 @@ public class ReactionNetwork {
 			}
 		}
 		
-		addReactionsToNetwork(instantiationResults.nonGenericReaction);
+//		addReactionsToNetwork(instantiationResults.nonGenericReaction);
+		//Reactions = new HashSet<AbstractReactionInstance>();
+		for (AbstractReactionInstance genericReaction : instantiationResults.genericReactionsFailedToInstantiate) Reactions.remove(genericReaction);
 		addReactionsToNetwork(instantiationResults.instantiatedReactions);
 //		Reactions = instantiationResults.nonGenericReaction;
 //		Reactions.addAll(instantiationResults.instantiatedReactions);
@@ -366,10 +453,14 @@ public class ReactionNetwork {
 	
 	// Network Verification Steps
 	private void verifyNetwork() {
-		
+		//TODO
 	}
 	
-	private void addReactionsToNetwork(ArrayList<AbstractReactionInstance> reactions) {
+	public void importJavacycReactions(ArrayList<Reaction> reactions) {
+		addReactionsToNetwork(reactionListToReactionInstances(reactions));
+	}
+	
+	public void addReactionsToNetwork(ArrayList<AbstractReactionInstance> reactions) {
 		//TODO Detect and handle duplicates.
 		for (AbstractReactionInstance reaction : reactions) {
 			if (Reactions.contains(reaction)) {

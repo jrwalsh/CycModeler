@@ -60,4 +60,17 @@ public class DiffusionReactionInstance extends AbstractReactionInstance {
 		return null;
 	}
 
+	@Override
+	public String printReaction() {
+		String printString = "";
+		printString += "DiffusionReactionsInstance" + "\t" + this.name_ + "\t" + "" + "\t";
+		for (MetaboliteInstance reactant : reactants_) {
+			printString += reactant.getMetaboliteID();
+		}
+		for (MetaboliteInstance product : products_) {
+			printString += product.getMetaboliteID();
+		}
+		return printString;
+	}
+
 }
