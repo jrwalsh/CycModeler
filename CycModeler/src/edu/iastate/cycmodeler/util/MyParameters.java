@@ -16,6 +16,9 @@ public class MyParameters {
 	static public String organismStringCBIRC =  "CBIRC"; //CBiRC E. coli model
 	static public int defaultPort =  4444;
 	
+	static public String user = "me"; //TODO set in config file
+	static public String password = "pass"; //TODO set in config file
+	
 	
 	// Parameters
 	public String OutputDirectory;

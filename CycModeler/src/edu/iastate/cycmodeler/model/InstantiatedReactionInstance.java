@@ -10,7 +10,7 @@ import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
 /**
- * Instantiated reactions are reactions that take on the properties of their parent reaction, but have replace the generic reactants and products of the parent
+ * Instantiated reactions are reactions that take on the properties of their parent reaction, but replace the generic reactants and products of the parent
  * reaction with specific instances of those reactants and products.
  * 
  * @author Jesse Walsh

@@ -3,6 +3,7 @@ package edu.iastate.cycmodeler.logic;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.sbml.libsbml.*;
@@ -240,9 +241,24 @@ public class CycModeler {
 			}
 			
 			// Create reaction list
+			HashMap<String, Integer> reactionMap = new HashMap<String, Integer>();
 			for (AbstractReactionInstance reaction : reactionInstances) {
 				org.sbml.libsbml.Reaction newReaction = model.createReaction();
-				newReaction.setId(reaction.generateReactionID());
+				
+//				ListOfReactions listOfReactions = model.getListOfReactions();
+//				for (int i = 0; i < listOfReactions.size(); i++) {
+//					org.sbml.libsbml.Reaction rxn = listOfReactions.get(i);
+//				}
+				
+				// Handle duplicate IDs
+				String reactionID = reaction.generateReactionID();
+				if (reactionMap.containsKey(reactionID)) {
+					int value = reactionMap.get(reactionID) + 1;
+					reactionMap.put(reactionID, value);
+					reactionID += "_" + value;
+				} else reactionMap.put(reactionID, 0);
+				
+				newReaction.setId(reactionID);
 //				if (reaction.ReactionFrame != null) newReaction.setId(reaction.generateReactionID());
 //				else if (reaction.parentReaction_ != null) newReaction.setId(reaction.generateReactionID());
 //				else newReaction.setId(reaction.generateReactionID());

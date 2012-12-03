@@ -77,7 +77,7 @@ public class Main {
 		String configFile = args[0];
 		
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(MyParameters.connectionStringLocal,MyParameters.defaultPort); //TODO connection info from commandline/configfile
+		conn = new JavacycConnection(MyParameters.connectionStringLocal, MyParameters.defaultPort, MyParameters.user, MyParameters.password); //TODO connection info from commandline/configfile
 		conn.selectOrganism(MyParameters.organismStringK12);
 		run(configFile);
 		Long stop = System.currentTimeMillis();
