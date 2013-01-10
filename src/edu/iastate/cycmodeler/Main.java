@@ -11,8 +11,6 @@ import edu.iastate.javacyco.JavacycConnection;
  *
  */
 public class Main {
-	static private JavacycConnection conn = null;
-	
 	static {
 		/**
 	     * The following static block is needed in order to load the
@@ -71,15 +69,14 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		if(args.length<1) {
-			System.out.println("Usage: Main CONFIGFILE");
+			System.out.println("Usage: Main CONFIGFILE REACTIONCONFIGFILE");
 			System.exit(0);
 		}
 		String configFile = args[0];
+		String reactionConfigFile = args[1];
 		
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(MyParameters.connectionStringLocal, MyParameters.defaultPort, MyParameters.user, MyParameters.password); //TODO connection info from commandline/configfile
-		conn.selectOrganism(MyParameters.organismStringK12);
-		run(configFile);
+		run(configFile, reactionConfigFile);
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;
 		System.out.println("Runtime is " + runtime + " seconds.");
@@ -88,10 +85,14 @@ public class Main {
 	/**
 	 * This method initializes a CycModeler object and calls its methods.
 	 */
-	public static void run(String configFile) {
+	public static void run(String configFile, String reactionConfigFile) {
 		MyParameters parameters = new MyParameters();
 		parameters.initializeFromConfigFile(configFile);
+		
+		JavacycConnection conn = new JavacycConnection(parameters.Host, parameters.Port, parameters.User, parameters.Password);
+		conn.selectOrganism(parameters.Organism);
+		
 		CycModeler modeler = new CycModeler(conn, parameters);
-		modeler.createGenomeScaleModelFromEcoCyc();
+		modeler.createModel(reactionConfigFile);
 	}
 }

@@ -74,8 +74,8 @@ public class Test {
 	public static void main(String[] args) {
 		System.out.println("TESTING MODE");
 		Long start = System.currentTimeMillis();
-		conn = new JavacycConnection(MyParameters.connectionStringTHTServer,MyParameters.defaultPort);
-		conn.selectOrganism(MyParameters.organismStringK12);
+		conn = new JavacycConnection("jrwalsh.student.iastate.edu",4444);
+		conn.selectOrganism("ECOLI");
 		test();
 		Long stop = System.currentTimeMillis();
 		Long runtime = (stop - start) / 1000;

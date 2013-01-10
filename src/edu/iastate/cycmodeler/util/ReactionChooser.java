@@ -1,12 +1,17 @@
 package edu.iastate.cycmodeler.util;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import edu.iastate.cycmodeler.logic.CycModeler;
 import edu.iastate.cycmodeler.model.AbstractReactionInstance;
+import edu.iastate.cycmodeler.util.MyParameters.Setting;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
@@ -14,20 +19,124 @@ import edu.iastate.javacyco.Reaction;
 
 public class ReactionChooser {
 	ArrayList<Reaction> reactions_;
-	JavacycConnection conn;
 	
-	public ReactionChooser (JavacycConnection conn) {
+	public ReactionChooser (String reactionConfigFile) {
 		this.reactions_ = new ArrayList<Reaction>();
-		this.conn = conn;
+		loadConfigFile(reactionConfigFile);
 	}
 	
-	public void getAllReactions() throws PtoolsErrorException {
-		this.reactions_ = Reaction.all(conn);
+	private void loadConfigFile(String fileName) {
+		ArrayList<String> classToFilter = new ArrayList<String>();
+		ArrayList<String> metaboliteClassToFilter = new ArrayList<String>();
+		ArrayList<String> reactionsToFilter = new ArrayList<String>();
+		
+		File configFile = new File(fileName);
+		BufferedReader reader = null;
+		
+		try {
+			reader = new BufferedReader(new FileReader(configFile));
+			String text = null;
+			
+			// Parse settings from file
+			while ((text = reader.readLine()) != null) {
+				try {
+					text = text.substring(0, text.indexOf("%"));
+				} catch (Exception e) {
+					// ignore, there are no comments
+				}
+				
+				String command = "";
+				String value = "";
+				try {
+					command = text.substring(0, text.indexOf(" "));
+					value = text.substring(text.indexOf(" ")+1);
+				} catch (Exception e) {
+					// this is not an attribute/value pair
+					command = text;
+				}
+				
+				if (command.length() == 0) continue;
+				command = command.trim();
+				value = value.trim();
+				
+				switch (ReactionSetting.value(command)) {
+					case INCLUDE: {
+						System.err.println("Not implemented"); break;//TODO
+					}
+					case INCLUDE_ALL: getAllReactions(); break;
+					case INCLUDE_PATHWAYS: getAllPathwayReactions(); break;
+					case EXCLUDE_REACTION_CLASS: classToFilter.add(value); break;
+					case EXCLUDE_METABOLITE_CLASS: metaboliteClassToFilter.add(value); break;
+					case EXCLUDE_REACTION: reactionsToFilter.add(value); break;
+					default: {
+						System.err.println("Unknown config command : " + command);
+					} break;
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				if (reader != null) {
+					reader.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		if (reactions_ == null || reactions_.size() == 0) {
+			System.err.println("No reactions have been selected!");
+			System.exit(-1);
+		}
+		
+		try {
+			removeReactionsByClass(classToFilter);
+			removeReactionsByMetaboliteClass(metaboliteClassToFilter);
+			removeSpecificReactions(reactionsToFilter);
+		} catch (PtoolsErrorException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void getAllReactions() throws PtoolsErrorException {
+		this.reactions_ = Reaction.all(CycModeler.conn);
 		
 		System.out.println("ReactionList : " + this.reactions_.size());
 	}
 	
-	public ArrayList<Reaction> removeSpecificReactions(ArrayList<String> reactionIDs) {
+	private void getAllPathwayReactions() throws PtoolsErrorException {
+		System.err.println("Not implemented"); //TODO
+		System.exit(-1);
+	}
+	
+	private void getAllGenericReactions() throws PtoolsErrorException {
+		ArrayList<Reaction> reactions = new ArrayList<Reaction>();
+		for (Reaction reaction : Reaction.all(CycModeler.conn)) {
+			boolean isGeneric = false;
+			for (Frame reactant : reaction.getReactants()) {
+				if (reactant.isClassFrame()) isGeneric = true;
+			}
+			for (Frame product : reaction.getProducts()) {
+				if (product.isClassFrame()) isGeneric = true;
+			}
+			
+			if (isGeneric) {
+				reactions.add(reaction);
+			}
+		}
+	}
+	
+	private ArrayList<Reaction> removeSpecificReactions(ArrayList<String> reactionIDs) {
 		ArrayList<Reaction> newReactionList = new ArrayList<Reaction>();
 		ArrayList<Reaction> removedReactions = new ArrayList<Reaction>();
 		for (Reaction reaction : reactions_) {
@@ -48,7 +157,7 @@ public class ReactionChooser {
 		return removedReactions;
 	}
 	
-	public ArrayList<Reaction> removeReactionsByClass(ArrayList<String> classIDs) throws PtoolsErrorException {
+	private ArrayList<Reaction> removeReactionsByClass(ArrayList<String> classIDs) throws PtoolsErrorException {
 		ArrayList<Reaction> newReactionList = new ArrayList<Reaction>();
 		ArrayList<Reaction> removedReactions = new ArrayList<Reaction>();
 		
@@ -77,7 +186,7 @@ public class ReactionChooser {
 		return removedReactions;
 	}
 	
-	public ArrayList<Reaction> removeReactionsByMetaboliteClass(ArrayList<String> classIDs) throws PtoolsErrorException {
+	private ArrayList<Reaction> removeReactionsByMetaboliteClass(ArrayList<String> classIDs) throws PtoolsErrorException {
 		ArrayList<Reaction> newReactionList = new ArrayList<Reaction>();
 		ArrayList<Reaction> removedReactions = new ArrayList<Reaction>();
 		
@@ -144,5 +253,20 @@ public class ReactionChooser {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	// Internal Classes
+	private enum ReactionSetting	{
+		INCLUDE, INCLUDE_ALL, INCLUDE_PATHWAYS,
+		EXCLUDE_REACTION_CLASS, EXCLUDE_METABOLITE_CLASS, EXCLUDE_REACTION,
+		NOVALUE;
+
+	    public static ReactionSetting value(String setting) {
+	        try {
+	            return valueOf(setting.toUpperCase());
+	        } catch (Exception e) {
+	            return NOVALUE;
+	        }
+	    }  
 	}
 }

@@ -8,6 +8,7 @@ import java.util.HashSet;
 import edu.iastate.cycmodeler.logic.CycModeler;
 import edu.iastate.cycmodeler.util.ListCombinations;
 import edu.iastate.cycmodeler.util.MyParameters;
+import edu.iastate.cycmodeler.util.Report;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.Pathway;
@@ -63,37 +64,46 @@ public class ReactionInstance extends AbstractReactionInstance {
 	 * @return List of newly created, elementally balanced reaction instances
 	 */
 	protected ArrayList<InstantiatedReactionInstance> generateInstantiatedReactions() {
-		JavacycConnection conn;
 		ArrayList<InstantiatedReactionInstance> newReactions = new ArrayList<InstantiatedReactionInstance>();
 		
 		ArrayList<MetaboliteInstance> genericReactants = new ArrayList<MetaboliteInstance>();
 		ArrayList<MetaboliteInstance> genericProducts = new ArrayList<MetaboliteInstance>();
-		ArrayList<MetaboliteInstance> nonGenericReactantMetabolites = new ArrayList<MetaboliteInstance>();
-		ArrayList<MetaboliteInstance> nonGenericProductMetabolites = new ArrayList<MetaboliteInstance>();
+		ArrayList<MetaboliteInstance> reactants = new ArrayList<MetaboliteInstance>();
+		ArrayList<MetaboliteInstance> products = new ArrayList<MetaboliteInstance>();
 		
 		try {
-			if (reactionFrame_ == null) return null;
+			if (reactionFrame_ == null) {
+				Report.instantiation.add("Reaction without a reaction frame.");
+				return null;
+			}
 			
-			conn = reactionFrame_.getConnection();
-			
-			// If reaction has specific forms, then assume those forms are already in the model
-			if (conn.specificFormsOfReaction(reactionFrame_.getLocalID()).size() > 0) return null;//TODO should not assume these reactions are already there.  try to add them, and if they are duplicates they will not be added
+			//If reaction has specific forms, then assume those forms are already in the model
+			if (CycModeler.conn.specificFormsOfReaction(reactionFrame_.getLocalID()).size() > 0) {
+				Report.instantiation.add("Reaction " + reactionFrame_.getLocalID() + " reports having reaction instances, skipping.");
+				return null;//TODO should not assume these reactions are already there.  try to add them, and if they are duplicates they will not be added
+			}
 			
 			// If reaction cannot be balanced then it cannot be instantiated
-			if (reactionFrame_.hasSlot("CANNOT-BALANCE?") && reactionFrame_.getSlotValue("CANNOT-BALANCE?") != null) return null;
+			if (reactionFrame_.hasSlot("CANNOT-BALANCE?") && reactionFrame_.getSlotValue("CANNOT-BALANCE?") != null) {
+				Report.instantiation.add("Reaction " + reactionFrame_.getLocalID() + " reports that it cannot be balanced, skipping.");
+				return null;
+			}
 			
 			// Sort generic from non-generic reactants and products.
 			for (MetaboliteInstance reactant : reactants_) {
-				if (conn.getFrameType(reactant.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
-				else nonGenericReactantMetabolites.add(reactant);
+				if (CycModeler.conn.getFrameType(reactant.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericReactants.add(reactant);
+				else reactants.add(reactant);
 			}
 			for (MetaboliteInstance product : products_) {
-				if (conn.getFrameType(product.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
-				else nonGenericProductMetabolites.add(product);
+				if (CycModeler.conn.getFrameType(product.getMetaboliteID()).toUpperCase().equals(":CLASS")) genericProducts.add(product);
+				else products.add(product);
 			}
 			
 			// Make sure this reaction is a generic reaction
-			if (genericReactants.size() == 0 && genericProducts.size() == 0) return null;
+			if (genericReactants.size() == 0 && genericProducts.size() == 0) {
+				System.err.println("How did a non-generic reaction get here?");
+				return null;
+			}
 			
 			//Generate instantiated reactions
 			try {
@@ -115,41 +125,39 @@ public class ReactionInstance extends AbstractReactionInstance {
 //					if (!listSet.contains(namedList)) listSet.add(namedList);
 //				}
 				
-				ListCombinations termCombinations = ListCombinations.listCombinations(conn, genericReactants, genericProducts);
+				ListCombinations termCombinations = ListCombinations.listCombinations(CycModeler.conn, genericReactants, genericProducts);
 				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
 					InstantiatedReactionInstance newReaction = new InstantiatedReactionInstance(reactionFrame_, "", reversible_, reactionLocation_, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
 					
 					// Non-generic metabolites
-					for (MetaboliteInstance reactant : nonGenericReactantMetabolites) {
+					for (MetaboliteInstance reactant : reactants) {
 						newReaction.reactants_.add(new MetaboliteInstance(reactant.getMetaboliteFrame(), reactant.compartment_, reactant.coefficient_));
 					}
-					for (MetaboliteInstance product : nonGenericProductMetabolites) {
+					for (MetaboliteInstance product : products) {
 						newReaction.products_.add(new MetaboliteInstance(product.getMetaboliteFrame(), product.compartment_, product.coefficient_));
 					}
 
-					// Generic metabolites -- Create a new MetaboliteInstance by replacing the old generic metabolite frame object with the new metabolite frame while keeping the compartment and stoichiometry the same 
+					// Generic metabolites -- Create a new MetaboliteInstance by replacing the generic metabolite object with an instance metabolite object while keeping the compartment and stoichiometry the same 
 					for (MetaboliteInstance genericReactant : genericReactants) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.getMetaboliteID())));
+						Frame newMetaboliteFrame = Frame.load(CycModeler.conn, combinationSet.get(termCombinations.nameList.indexOf(genericReactant.getMetaboliteID())));
 						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericReactant.compartment_, genericReactant.coefficient_);
 						newReaction.reactants_.add(newMetabolite);
 					}
 					for (MetaboliteInstance genericProduct : genericProducts) {
-						Frame newMetaboliteFrame = Frame.load(conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.getMetaboliteID())));
+						Frame newMetaboliteFrame = Frame.load(CycModeler.conn, combinationSet.get(termCombinations.nameList.indexOf(genericProduct.getMetaboliteID())));
 						MetaboliteInstance newMetabolite = new MetaboliteInstance(newMetaboliteFrame, genericProduct.compartment_, genericProduct.coefficient_);
 						newReaction.products_.add(newMetabolite);
 					}
 					
-					// If the chosen metabolite instances result in this new reaction having a balanced elemental equation, include it in the new
-					// reactionInstances to be returned.
-					if (newReaction.isReactionBalanced() && !newReaction.isReactionGeneric()) {
-						// We need unique names for the newly instantiated reactions. Append the names of the instantiated metabolites to the reaction name.
-						String nameModifier = "";
-						for (String term : combinationSet) nameModifier += term + "_";
-						if (nameModifier.endsWith("_")) nameModifier = nameModifier.substring(0, nameModifier.length()-1);
-								
-						newReaction.name_ = newReaction.parentReactionFrame_.getCommonName() + nameModifier;
+					// If the chosen metabolite instances result in a balanced elemental equation, include it in the new reactionInstances to be returned.
+					if (newReaction.isReactionGeneric()) {
+						Report.instantiation.add("Attempt to instantiate " + reactionFrame_.getLocalID() + " resulted in another generic reaction. This should not happen.");
+					} else if (!newReaction.isReactionBalanced()) {
+						Report.instantiation.add("Attempt to instantiate " + reactionFrame_.getLocalID() + " resulted in unbalanced equation.");
+					} else {
+						newReaction.name_ = newReaction.parentReactionFrame_.getCommonName();
 						newReactions.add(newReaction);
 					}
 				}

@@ -34,36 +34,6 @@ public abstract class AbstractReactionInstance {
 		HashMap<String, Integer> productElements = new HashMap<String, Integer>();
 		try {
 			for (MetaboliteInstance reactant : reactants_) {
-				// Special Case
-//				int specialCases = 0;
-//				if (reactant.getMetaboliteID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-//				else if (reactant.getMetaboliteID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
-//				switch (specialCases) {
-//					case 1: {
-//						if (reactantElements.containsKey("A")) {
-//							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
-//						} else {
-//							reactantElements.put("A", (1*reactant.coefficient_));
-//						}
-//					} break;
-//					case 2: {
-//						if (reactantElements.containsKey("A")) {
-//							reactantElements.put("A", reactantElements.get("A") + (1*reactant.coefficient_));
-//						} else {
-//							reactantElements.put("A", (1*reactant.coefficient_));
-//						}
-//						if (reactantElements.containsKey("H")) {
-//							reactantElements.put("H", reactantElements.get("H") + (2*reactant.coefficient_));
-//						} else {
-//							reactantElements.put("H", (2*reactant.coefficient_));
-//						}
-//					} break;
-//				}
-//				if (specialCases != 0) {
-//					continue;
-//				}
-				
-				// Regular Case
 				for (Object o : reactant.getMetaboliteFrame().getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
@@ -79,36 +49,6 @@ public abstract class AbstractReactionInstance {
 			}
 			
 			for (MetaboliteInstance product : products_) {
-				// Special Case
-//				int specialCases = 0;
-//				if (product.getMetaboliteID().equalsIgnoreCase("|Acceptor|")) specialCases = 1;
-//				else if (product.getMetaboliteID().equalsIgnoreCase("|Donor-H2|")) specialCases = 2;
-//				switch (specialCases) {
-//					case 1: {
-//						if (productElements.containsKey("A")) {
-//							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
-//						} else {
-//							productElements.put("A", (1*product.coefficient_));
-//						}
-//					} break;
-//					case 2: {
-//						if (productElements.containsKey("A")) {
-//							productElements.put("A", productElements.get("A") + (1*product.coefficient_));
-//						} else {
-//							productElements.put("A", (1*product.coefficient_));
-//						}
-//						if (productElements.containsKey("H")) {
-//							productElements.put("H", productElements.get("H") + (2*product.coefficient_));
-//						} else {
-//							productElements.put("H", (1*product.coefficient_));
-//						}
-//					} break;
-//				}
-//				if (specialCases != 0) {
-//					continue;
-//				}
-				
-				// Regular Case
 				for (Object o : product.getMetaboliteFrame().getSlotValues("CHEMICAL-FORMULA")) {
 					String chemicalFormulaElement = o.toString().substring(1, o.toString().length()-1).replace(" ", "");
 					String element = chemicalFormulaElement.split(",")[0];
@@ -129,6 +69,17 @@ public abstract class AbstractReactionInstance {
 			return false;
 		}
 		
+		try {
+			elementalDiff(reactantElements, productElements);
+		} catch(Exception e) {
+			String reactants = "";
+			String products = "";
+			for (MetaboliteInstance reactant : this.reactants_) reactants += reactant.getMetaboliteFrame().getLocalID() + ",";
+			for (MetaboliteInstance product : this.products_) products += product.getMetaboliteFrame().getLocalID() + ",";
+			System.err.println("Could not do a diff on reaction " + ((InstantiatedReactionInstance)this).parentReactionFrame_.getLocalID() + " using the reactants " + reactants + " and products " + products);
+		}
+		
+		
 		if (!reactantElements.keySet().containsAll(productElements.keySet()) || !productElements.keySet().containsAll(reactantElements.keySet())) return false;
 		for (String key : reactantElements.keySet()) {
 //			if (key.equalsIgnoreCase("H")) { //TODO account for reactions which fail to match by commonly omitted elements
@@ -140,6 +91,24 @@ public abstract class AbstractReactionInstance {
 		}
 		
 		return true;
+	}
+	
+	private void elementalDiff(HashMap<String, Integer> reactantElements, HashMap<String, Integer> productElements) {
+		HashMap<String, Integer> elementalDiff = new HashMap<String, Integer>();
+		
+		elementalDiff.putAll(reactantElements);
+		for (String key : productElements.keySet()) {
+			if (elementalDiff.containsKey(key)) {
+				elementalDiff.put(key, elementalDiff.get(key) - productElements.get(key));
+			} else elementalDiff.put(key, 0 - productElements.get(key));
+			
+		}
+		
+		if (elementalDiff.keySet().size() == 1 && elementalDiff.keySet().contains("H")) {
+			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s).");
+		} else if (elementalDiff.keySet().size() == 2 && elementalDiff.keySet().contains("H") && elementalDiff.keySet().contains("O")) {
+			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s) and " + elementalDiff.get("O") + " O atom(s).");
+		}
 	}
 
 	protected boolean isReactionGeneric() {
