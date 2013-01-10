@@ -31,27 +31,8 @@ import edu.iastate.javacyco.Reaction;
  *
  */
 public class CycModeler {
-	static protected JavacycConnection conn;
+	public static JavacycConnection conn;
 	public static MyParameters parameters;
-	
-	/**
-	 * Constructor: sets internal JavacycConnection object and initializes several default settings for generating models.
-	 * 
-	 * @param connectionString URL of the server running Pathway Tools
-	 * @param port Port that JavaCycO is listening on
-	 * @param organism Organism to connect to (i.e., selects which database to connect to)
-	 * @param configFile Path to configuration file
-	 */
-	public CycModeler (String connectionString, int port, String organism, MyParameters parameters) {
-		String CurrentConnectionString = connectionString;
-		int CurrentPort = port;
-		String CurrentOrganism = organism;
-
-		conn = new JavacycConnection(CurrentConnectionString,CurrentPort);
-		conn.selectOrganism(CurrentOrganism);
-		
-		this.parameters = parameters;
-	}
 	
 	/**
 	 * Constructor: sets internal JavacycConnection object and initializes several default settings for generating models.
@@ -68,81 +49,45 @@ public class CycModeler {
 
 	// Methods
 	/**
-	 * This method will create a new genome-scale model from an EcoCyc database. All reactions are included other than 
-	 * |Polynucleotide-Reactions| and |Protein-Reactions| reactions, which are filtered out. Generic reactions are
-	 * instantiated, and boundary reactions are created for external metabolites. The model is then written to an
-	 * SBML file.
+	 * This method will create a new model from a Cyc database. Generic reactions are instantiated, and boundary reactions
+	 * are created for external metabolites. The model is then written to an SBML file.
 	 */
-	public void createGenomeScaleModelFromEcoCyc() {
-		// 1) Create blank model
-		System.out.println("Generating blank model ...");
-		SBMLDocument doc = createBlankSBMLDocument(parameters.ModelName, parameters.DefaultSBMLLevel, parameters.DefaultSBMLVersion);
+	public void createModel(String reactionConfigFile) {
+		// 1) Load reaction config file
+		System.out.println("Loading reaction config file ...");
+		ReactionChooser reactionChooser = new ReactionChooser(reactionConfigFile);
+		ReactionNetwork reactionNetwork = new ReactionNetwork(reactionChooser.getReactionList());
 		
-		// 2) Load all reactions
-//		System.out.println("Loading all reactions ...");
-//		ArrayList<Reaction> allReactions = Reaction.all(conn);
-//		ReactionNetwork reactionNetwork = ReactionNetwork.getReactionNetwork(conn, allReactions);
-		
-		// 3) Filter unwanted reactions
-//		System.out.println("Filtering unwanted reactions ...");
-		System.out.println("Initializing reaction network ...");
-		ArrayList<String> classToFilter = new ArrayList<String>();
-		classToFilter.add("|Polynucleotide-Reactions|");
-		classToFilter.add("|Protein-Reactions|"); //TODO filter more stuff
-		classToFilter.add("|RNA-Reactions|");
-		ArrayList<String> metaboliteClassToFilter = new ArrayList<String>();
-		metaboliteClassToFilter.add("|Proteins|");
-		metaboliteClassToFilter.add("|Nucleotides|"); //TODO filter more stuff
-		metaboliteClassToFilter.add("|POLYPEPTIDE|");
-		ArrayList<String> reactionsToFilter = new ArrayList<String>();
-		reactionsToFilter.add("RXN0-5266");//Duplicate reactants/products to RXN0-5268              //TODO Verify these duplicate removals (and consider merging instead)
-		reactionsToFilter.add("RXN0-5330");//Duplicate reactants/products to NADH-DEHYDROG-A-RXN
-		reactionsToFilter.add("ACID-PHOSPHATASE-RXN");//Merge with ALKAPHOSPHA-RXN
-		reactionsToFilter.add("RXN0-6370");//Should not conflict with RXN0-5242
-		reactionsToFilter.add("RXN0-5255");//Should not conflict with RXN0-3283
-		reactionsToFilter.add("RXN0-5254");//Should not conflict with TRANS-RXN0-234
-		reactionsToFilter.add("RXN0-5244");//Should not conflict with TRANS-RXN0-237
-		ReactionNetwork reactionNetwork = new ReactionNetwork(conn);
-//		reactionNetwork.initializeGenomeScaleReactionNetwork(classToFilter, reactionsToFilter); //TODO filtering should be part of the config file
-//		reactionNetwork.initializeReactionNetwork();
-		ReactionChooser reactionChooser = new ReactionChooser(conn);
-		try {
-			reactionChooser.getAllReactions();
-			reactionChooser.removeReactionsByClass(classToFilter);
-			reactionChooser.removeReactionsByMetaboliteClass(metaboliteClassToFilter);
-			reactionChooser.removeSpecificReactions(reactionsToFilter);
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		reactionNetwork.importJavacycReactions(reactionChooser.getReactionList());
-		
-		// 4) Find and instantiate generics
+		// 2) Find and instantiate generics
 		System.out.println("Instantiating generic reactions ...");
 		reactionNetwork.generateSpecificReactionsFromGenericReactions();
 		
-		// 5) Add diffusion reactions
+		// 3) Add diffusion reactions
 		System.out.println("Adding diffusion reactions ...");
-		reactionNetwork.addPassiveDiffusionReactions("CCO-PERI-BAC" , "CCO-EXTRACELLULAR", (float) 610.00); //TODO again, from a config file
+		reactionNetwork.addPassiveDiffusionReactions("CCO-PERI-BAC" , "CCO-EXTRACELLULAR", parameters.DiffusionSize);
 		
-		// 6) Add boundaries
+		// 4) Add boundaries
 		System.out.println("Adding boundary reactions ...");
 		reactionNetwork.addBoundaryReactionsByCompartment(parameters.ExternalCompartmentName);
 		
-		// 7) Generate SBML model
+		// 5) Create blank model
+		System.out.println("Initiating blank model ...");
+		SBMLDocument doc = createBlankSBMLDocument(parameters.ModelName, parameters.DefaultSBMLLevel, parameters.DefaultSBMLVersion);
+				
+		// 6) Generate SBML model
 		System.out.println("Generating SBML model ...");
 		generateSBMLModel(doc, reactionNetwork);
 		
-		// 8) Write revised model.
+		// 7) Write model.
 		System.out.println("Writing output ...");
 		SBMLWriter writer = new SBMLWriter();
-		writer.writeSBML(doc, parameters.OutputDirectory + "written_SBML.xml"); //TODO again, config file for file name
+		writer.writeSBML(doc, parameters.OutputDirectory + parameters.OutputFileName);
 		
 		// Print statistics
 		reactionNetwork.printNetworkStatistics();
 		
 		System.out.println("Done!");
 	}
-	
 	
 	// SBML Document Methods
 	/**
@@ -302,13 +247,13 @@ public class CycModeler {
 				
 				Parameter lb = kl.createParameter();
 				lb.setId("LOWER_BOUND");
-				if (newReaction.getReversible()) lb.setValue(-1000); //TODO set default scale value in config file, for both upper and lower
+				if (newReaction.getReversible()) lb.setValue(parameters.DefaultLowerBound);
 				else lb.setValue(0);
 				lb.setUnits("mmol_per_gDW_per_hr");
 				
 				Parameter ub = kl.createParameter();
 				ub.setId("UPPER_BOUND");
-				ub.setValue(1000);
+				ub.setValue(parameters.DefaultUpperBound);
 				ub.setUnits("mmol_per_gDW_per_hr");
 				
 				Parameter obj = kl.createParameter();
@@ -423,24 +368,4 @@ public class CycModeler {
 		
 		return output;
 	}
-	
-	/**
-	 * Simple function to print a string to the specified file location.
-	 * 
-	 * @param fileName
-	 * @param printString
-	 */
-	private void printString(String fileName, String printString) {
-		PrintStream o = null;
-		try {
-			o = new PrintStream(new File(fileName));
-			o.println(printString);
-			o.close();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
- 	}
-	
 }

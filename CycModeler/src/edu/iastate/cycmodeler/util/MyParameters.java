@@ -8,20 +8,16 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class MyParameters {
-	// Global static variables
-	static public String connectionStringLocal =  "jrwalsh.student.iastate.edu";
-	static public String connectionStringEcoServer =  "ecoserver.vrac.iastate.edu";
-	static public String connectionStringTHTServer =  "tht.vrac.iastate.edu";
-	static public String organismStringK12 =  "ECOLI"; //Built-in K12 model
-	static public String organismStringCBIRC =  "CBIRC"; //CBiRC E. coli model
-	static public int defaultPort =  4444;
-	
-	static public String user = "me"; //TODO set in config file
-	static public String password = "pass"; //TODO set in config file
-	
+	// Connection Info
+	public String Host;
+	public int Port;
+	public String Organism;
+	public String User;
+	public String Password;
 	
 	// Parameters
 	public String OutputDirectory;
+	public String OutputFileName;
 	public String DefaultCompartment;
 	public int DefaultSBMLLevel;
 	public int DefaultSBMLVersion;
@@ -32,13 +28,24 @@ public class MyParameters {
 	public String ExchangeReactionSuffix;
 	public String ModelName;
 	public String ExternalCompartmentName;
+	public float DiffusionSize;
+	public int DefaultUpperBound;
+	public int DefaultLowerBound;
+	
 	
 	public MyParameters() {
 		initDefault();
 	}
 	
 	public void initDefault() {
+		Host = "localhost";
+		Port = 4444;
+		Organism = "ECOLI";
+		User = "";
+		Password = "";
+		
 		OutputDirectory = "/home/jesse/Desktop/output/";
+		OutputFileName = Organism + "_Model";
 		DefaultCompartment = "CCO-CYTOSOL";
 		DefaultSBMLLevel = 2;
 		DefaultSBMLVersion = 1;
@@ -49,21 +56,12 @@ public class MyParameters {
 		ReactionPrefix = "R";
 		CompartmentAbrevs = new HashMap<String, String>();
 		ExternalCompartmentName = "CCO-EXTRACELLULAR";
+		DiffusionSize = (float) 0;
+		DefaultUpperBound = 9999;
+		DefaultLowerBound = -9999;
 	}
 	
 	public void initializeFromConfigFile(String fileName) {
-		String outputDirectory = null;
-		String defaultCompartment = null;
-		int defaultSBMLLevel = 0;
-		int defaultSBMLVersion = 0;
-		String modelName = null;
-		String boundaryCompartmentName = null;
-		String exchangeReactionSuffix = null;
-		String speciesPrefix = null;
-		String reactionPrefix = null;
-		HashMap<String, String> compartmentAbrevs = new HashMap<String, String>();
-		
-		
 		File configFile = new File(fileName);
 		BufferedReader reader = null;
 		
@@ -77,22 +75,31 @@ public class MyParameters {
 				String value = text.substring(text.indexOf(" ")+1);
 				
 				switch (Setting.value(command)) {
-					case OUTPUTDIRECTORY: outputDirectory = value; break;
-					case DEFAULTCOMPARTMENT: defaultCompartment = value; break;
-					case DEFAULTSBMLLEVEL: defaultSBMLLevel = Integer.parseInt(value); break;
-					case DEFAULTSBMLVERSION: defaultSBMLVersion = Integer.parseInt(value); break;
-					case MODELNAME: modelName = value; break;
-					case BOUNDARYCOMPARTMENTNAME: boundaryCompartmentName = value; break;
-					case EXCHANGEREACTIONSUFFIX: exchangeReactionSuffix = value; break;
-					case SPECIESPREFIX: speciesPrefix = value; break;
-					case REACTIONPREFIX: reactionPrefix = value; break;
+					case HOST: Host = value; break;
+					case PORT: Port = Integer.parseInt(value); break;
+					case ORGANISM: Organism = value; break;
+					case USER: User = value; break;
+					case PASSWORD: Password = value; break;
+					case OUTPUTDIRECTORY: OutputDirectory = value; break;
+					case OUTPUTFILENAME: OutputFileName = value; break;
+					case DEFAULTCOMPARTMENT: DefaultCompartment = value; break;
+					case DEFAULTSBMLLEVEL: DefaultSBMLLevel = Integer.parseInt(value); break;
+					case DEFAULTSBMLVERSION: DefaultSBMLVersion = Integer.parseInt(value); break;
+					case MODELNAME: ModelName = value; break;
+					case BOUNDARYCOMPARTMENTNAME: BoundaryCompartmentName = value; break;
+					case EXCHANGEREACTIONSUFFIX: ExchangeReactionSuffix = value; break;
+					case SPECIESPREFIX: SpeciesPrefix = value; break;
+					case REACTIONPREFIX: ReactionPrefix = value; break;
 					case COMPARTMENTABREVS: {
 						String[] values = value.split(";");
 						for (String compartmentAbrevPair : values) {
 							String[] pair = compartmentAbrevPair.split(",");
-							compartmentAbrevs.put(pair[0], pair[1]);
+							CompartmentAbrevs.put(pair[0], pair[1]);
 						}
 					} break;
+					case DIFFUSIONSIZE: DiffusionSize = Float.parseFloat(value); break;
+					case DEFAULTUPPERBOUND: DefaultUpperBound = Integer.parseInt(value); break;
+					case DEFAULTLOWERBOUND: DefaultLowerBound = Integer.parseInt(value); break;
 					default: {
 						System.err.println("Unknown config command : " + command);
 					} break;
@@ -100,28 +107,26 @@ public class MyParameters {
 			}
 			
 			// Verify settings
-			assert outputDirectory != null;
-			assert defaultCompartment != null;
-			assert defaultSBMLLevel != 0;
-			assert defaultSBMLVersion != 0;
-			assert modelName != null;
-			assert boundaryCompartmentName != null;
-			assert exchangeReactionSuffix != null;
-			assert speciesPrefix != null;
-			assert reactionPrefix != null;
-			assert compartmentAbrevs.size() != 0;
+			assert Host != null;
+			assert Port > 0;
+			assert Organism != null;
+			assert User != null;
+			assert Password != null;
 			
-			// Set variables
-			OutputDirectory = outputDirectory;
-			DefaultCompartment = defaultCompartment;
-			DefaultSBMLLevel = defaultSBMLLevel;
-			DefaultSBMLVersion = defaultSBMLVersion;
-			ModelName = modelName;
-			BoundaryCompartmentName = boundaryCompartmentName;
-			ExchangeReactionSuffix = exchangeReactionSuffix;
-			SpeciesPrefix = speciesPrefix;
-			ReactionPrefix = reactionPrefix;
-			CompartmentAbrevs = compartmentAbrevs;
+			assert OutputDirectory != null;
+			assert OutputFileName != null;
+			assert DefaultCompartment != null;
+			assert DefaultSBMLLevel != 0;
+			assert DefaultSBMLVersion != 0;
+			assert ModelName != null;
+			assert BoundaryCompartmentName != null;
+			assert ExchangeReactionSuffix != null;
+			assert SpeciesPrefix != null;
+			assert ReactionPrefix != null;
+			assert CompartmentAbrevs.size() != 0;
+			assert DiffusionSize >= (float) 0;
+			assert DefaultUpperBound >= DefaultLowerBound;
+			assert DefaultLowerBound <= DefaultUpperBound;
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -147,7 +152,13 @@ public class MyParameters {
 	
 	// Internal Classes
 	public enum Setting	{
+		HOST,
+		PORT,
+		ORGANISM,
+		USER,
+		PASSWORD,
 		OUTPUTDIRECTORY,
+		OUTPUTFILENAME,
 		DEFAULTCOMPARTMENT,
 		DEFAULTSBMLLEVEL,
 		DEFAULTSBMLVERSION,
@@ -157,7 +168,10 @@ public class MyParameters {
 		SPECIESPREFIX,
 		REACTIONPREFIX,
 		COMPARTMENTABREVS,
-	    NOVALUE;
+		DIFFUSIONSIZE,
+		DEFAULTUPPERBOUND,
+		DEFAULTLOWERBOUND,
+		NOVALUE;
 
 	    public static Setting value(String setting) {
 	        try {

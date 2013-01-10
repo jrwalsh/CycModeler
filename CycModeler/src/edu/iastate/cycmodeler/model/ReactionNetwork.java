@@ -17,26 +17,14 @@ import edu.iastate.javacyco.Reaction;
  * identifiers, will be handled in a separate class.
  */
 public class ReactionNetwork {
-	private JavacycConnection conn = null;
 	public HashSet<AbstractReactionInstance> Reactions;
 
 	// Network modification statistics
 	private Report report;
 	
-//	public static ReactionNetwork getReactionNetwork(JavacycConnection connection, ArrayList<Reaction> reactions) {
-//		ArrayList<AbstractReactionInstance> reactionInstances = reactionListToReactionInstances(reactions);
-//		ReactionNetwork reactionNetwork = new ReactionNetwork(connection, reactionInstances);
-//		return reactionNetwork;
-//	}
-	
-	public ReactionNetwork (JavacycConnection connection) {
-		this(connection, new ArrayList<AbstractReactionInstance>());
-	}
-	
-	private ReactionNetwork (JavacycConnection connection, ArrayList<AbstractReactionInstance> reactions) {
-		conn = connection;
+	public ReactionNetwork (ArrayList<Reaction> reactions) {
 		this.Reactions = new HashSet<AbstractReactionInstance>();
-		addReactionsToNetwork(reactions);
+		importJavacycReactions(reactions);
 		
 		report = new Report();
 		report.setTotalInitialReactionsCount(Reactions.size());
@@ -319,7 +307,7 @@ public class ReactionNetwork {
 		
 		for (AbstractReactionInstance reaction : Reactions) {
 			if (reaction instanceof ReactionInstance) {
-				if (((ReactionInstance) reaction).isGenericReaction(conn)) {
+				if (((ReactionInstance) reaction).isGenericReaction(CycModeler.conn)) {
 					instantiationResults.genericReactionsFound.add(reaction);
 					ArrayList<InstantiatedReactionInstance> instantiatedReactions = ((ReactionInstance) reaction).generateInstantiatedReactions();
 					if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
@@ -370,7 +358,7 @@ public class ReactionNetwork {
 		ArrayList<String> list;
 		int transportReactionCount = 0;
 		try {
-			list = (ArrayList<String>)conn.getClassAllInstances("|Transport-Reactions|");
+			list = (ArrayList<String>)CycModeler.conn.getClassAllInstances("|Transport-Reactions|");
 			for (AbstractReactionInstance reaction : Reactions) {
 				if (reaction instanceof ReactionInstance) {
 					if (list.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) transportReactionCount++;

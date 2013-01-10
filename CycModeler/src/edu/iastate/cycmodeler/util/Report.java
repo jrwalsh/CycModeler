@@ -1,5 +1,7 @@
 package edu.iastate.cycmodeler.util;
 
+import java.util.ArrayList;
+
 public class Report {
 	private int totalInitialReactionsCount;
 	private int filteredReactions;
@@ -13,6 +15,8 @@ public class Report {
 	private int newReactionsFromReactionsSplitByLocation;
 	private int transportReactions;
 	private int totalReactions;
+	
+	public static ArrayList<String> instantiation;
 	
 	public Report() {
 		initDefault();
@@ -31,6 +35,8 @@ public class Report {
 		newReactionsFromReactionsSplitByLocation = 0;
 		transportReactions = 0;
 		totalReactions = 0;
+		
+		instantiation = new ArrayList<String>();
 	}
 	
 	public void setTotalInitialReactionsCount(int totalStartingReactionsCount) {
