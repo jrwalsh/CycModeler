@@ -14,6 +14,7 @@ import edu.iastate.cycmodeler.model.AbstractReactionInstance;
 import edu.iastate.cycmodeler.util.MyParameters.Setting;
 import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
+import edu.iastate.javacyco.Pathway;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
 
@@ -63,8 +64,8 @@ public class ReactionChooser {
 					case INCLUDE: {
 						System.err.println("Not implemented"); break;//TODO
 					}
-					case INCLUDE_ALL: getAllReactions(); break;
-					case INCLUDE_PATHWAYS: getAllPathwayReactions(); break;
+					case INCLUDE_ALL_REACTIONS: getAllReactions(); break;
+					case INCLUDE_ALL_PATHWAYS: getAllPathwayReactions(); break;
 					case EXCLUDE_REACTION_CLASS: classToFilter.add(value); break;
 					case EXCLUDE_METABOLITE_CLASS: metaboliteClassToFilter.add(value); break;
 					case EXCLUDE_REACTION: reactionsToFilter.add(value); break;
@@ -115,8 +116,11 @@ public class ReactionChooser {
 	}
 	
 	private void getAllPathwayReactions() throws PtoolsErrorException {
-		System.err.println("Not implemented"); //TODO
-		System.exit(-1);
+		ArrayList<String> pathwayLabels = CycModeler.conn.allPathways();
+		for (String pathwayLabel : pathwayLabels) {
+			Pathway pwy = (Pathway) Pathway.load(CycModeler.conn, pathwayLabel);
+			this.reactions_.addAll(pwy.getReactions());
+		}
 	}
 	
 	private void getAllGenericReactions() throws PtoolsErrorException {
@@ -257,7 +261,7 @@ public class ReactionChooser {
 	
 	// Internal Classes
 	private enum ReactionSetting	{
-		INCLUDE, INCLUDE_ALL, INCLUDE_PATHWAYS,
+		INCLUDE, INCLUDE_ALL_REACTIONS, INCLUDE_ALL_PATHWAYS,
 		EXCLUDE_REACTION_CLASS, EXCLUDE_METABOLITE_CLASS, EXCLUDE_REACTION,
 		NOVALUE;
 
