@@ -89,7 +89,8 @@ public class Main {
 		MyParameters parameters = new MyParameters();
 		parameters.initializeFromConfigFile(configFile);
 		
-		JavacycConnection conn = new JavacycConnection(parameters.Host, parameters.Port, parameters.User, parameters.Password);
+		JavacycConnection conn = new JavacycConnection(parameters.Host, parameters.Port);
+//		JavacycConnection conn = new JavacycConnection(parameters.Host, parameters.Port, parameters.User, parameters.Password);
 		conn.selectOrganism(parameters.Organism);
 		
 		CycModeler modeler = new CycModeler(conn, parameters);

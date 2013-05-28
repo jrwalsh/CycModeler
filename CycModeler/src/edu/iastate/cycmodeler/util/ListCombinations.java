@@ -3,6 +3,7 @@ package edu.iastate.cycmodeler.util;
 import java.util.ArrayList;
 
 import edu.iastate.cycmodeler.model.MetaboliteInstance;
+import edu.iastate.javacyco.Frame;
 import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.PtoolsErrorException;
 
@@ -20,16 +21,34 @@ public class ListCombinations {
 		ArrayList<NamedList> listSet = new ArrayList<NamedList>();
 		for (MetaboliteInstance genericTerm : genericReactants) {
 			ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
-			for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) instancesOfGenericTerm.add(instance.toString());
-			if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.getMetaboliteID());
+			for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) {
+				if (!Frame.load(conn, (String) instance).isClassFrame()) instancesOfGenericTerm.add(instance.toString());
+			}
+			if (genericTerm.chemicalFormula_ != null && !genericTerm.chemicalFormula_.equalsIgnoreCase("")) {
+				System.err.println(genericTerm.getMetaboliteID() + " " + genericTerm.chemicalFormula_);
+				instancesOfGenericTerm.add(genericTerm.getMetaboliteID());//Failsafe, if the "CLASS" metabolite has a proper chemical formula, it can be balanced
+			}
+			if (instancesOfGenericTerm.size() == 0) {
+				return null;
+//				instancesOfGenericTerm.add(genericTerm.getMetaboliteID()); // DO NOT ADD A GENERIC BACK INTO THE LIST!!
+			}
 			NamedList namedList = new NamedList(genericTerm.getMetaboliteID(), instancesOfGenericTerm);
 			if (!listSet.contains(namedList)) listSet.add(namedList);
 		}
 		
 		for (MetaboliteInstance genericTerm : genericProducts) {
 			ArrayList<String> instancesOfGenericTerm = new ArrayList<String>();
-			for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) instancesOfGenericTerm.add(instance.toString());
-			if (instancesOfGenericTerm.size() == 0) instancesOfGenericTerm.add(genericTerm.getMetaboliteID());
+			for (Object instance : conn.getClassAllInstances(genericTerm.getMetaboliteID())) {
+				if (!Frame.load(conn, (String) instance).isClassFrame()) instancesOfGenericTerm.add(instance.toString());
+			}
+			if (genericTerm.chemicalFormula_ != null && !genericTerm.chemicalFormula_.equalsIgnoreCase("")) {
+				System.err.println(genericTerm.getMetaboliteID() + " " + genericTerm.chemicalFormula_);
+				instancesOfGenericTerm.add(genericTerm.getMetaboliteID());//Failsafe, if the "CLASS" metabolite has a proper chemical formula, it can be balanced
+			}
+			if (instancesOfGenericTerm.size() == 0) {
+				return null;
+//				instancesOfGenericTerm.add(genericTerm.getMetaboliteID()); // DO NOT ADD A GENERIC BACK INTO THE LIST!!
+			}
 			NamedList namedList = new NamedList(genericTerm.getMetaboliteID(), instancesOfGenericTerm);
 			if (!listSet.contains(namedList)) listSet.add(namedList);
 		}

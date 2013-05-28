@@ -46,6 +46,34 @@ public class CycModeler {
 		this.parameters = parameters;
 	}
 	
+	// Test
+	public void test() throws PtoolsErrorException {
+		ArrayList<Reaction> reactionList = new ArrayList<Reaction>();
+		reactionList.add((Reaction) Reaction.load(conn, "MALATE-DEHYDROGENASE-ACCEPTOR-RXN"));
+		ReactionNetwork reactionNetwork = new ReactionNetwork(reactionList);
+		
+		// 2) Find and instantiate generics
+		System.out.println("Instantiating generic reactions ...");
+		reactionNetwork.generateSpecificReactionsFromGenericReactions();
+		
+		// 5) Create blank model
+		System.out.println("Initiating blank model ...");
+		SBMLDocument doc = createBlankSBMLDocument("Test", 2, 1);
+				
+		// 6) Generate SBML model
+		System.out.println("Generating SBML model ...");
+		generateSBMLModel(doc, reactionNetwork);
+		
+		// 7) Write model.
+		System.out.println("Writing output ...");
+		SBMLWriter writer = new SBMLWriter();
+		writer.writeSBML(doc, "/home/jesse/Desktop/test_output_model.xml");
+		
+		// Print statistics
+		reactionNetwork.printNetworkStatistics();
+		
+		System.out.println("Done!");
+	}
 
 	// Methods
 	/**
@@ -54,13 +82,34 @@ public class CycModeler {
 	 */
 	public void createModel(String reactionConfigFile) {
 		// 1) Load reaction config file
+		/*
+		 * Note that in this step all reactions requested are considered and placed in the reaction list. However, duplicate reactions are not
+		 * allowed. Duplicate reactions are considered reactions for which the exact same reactants and products are used and the reactions 
+		 * occur in the same location (ie having the same name is not sufficient for a reaction to be considered duplicate at this stage)
+		 */
 		System.out.println("Loading reaction config file ...");
 		ReactionChooser reactionChooser = new ReactionChooser(reactionConfigFile);
 		ReactionNetwork reactionNetwork = new ReactionNetwork(reactionChooser.getReactionList());
 		
+		// 1.1) Remove reactions with the CANNOT-BALANCE flag set
+		reactionNetwork.removeCannotBalanceReactions();
+		
+		// 2.1) Remove any unbalance reactions
+		reactionNetwork.removeUnbalancedReactions();
+		
 		// 2) Find and instantiate generics
+		/*
+		 * Note that in this step all reactions are filtered between generic and non-generic reactions. Those that are generic are attempted to be
+		 * instantiated. Those that aren't are left alone. Generic reactions, whether instantiated or not, are removed from the reaction list.
+		 */
 		System.out.println("Instantiating generic reactions ...");
 		reactionNetwork.generateSpecificReactionsFromGenericReactions();
+		
+		// 2.1) Final filter for all non-balanced reactions
+		
+		// 2.2) Output network heatmap
+		String heatMap = reactionNetwork.generateHeatMap();
+		System.out.println(heatMap);
 		
 		// 3) Add diffusion reactions
 		System.out.println("Adding diffusion reactions ...");

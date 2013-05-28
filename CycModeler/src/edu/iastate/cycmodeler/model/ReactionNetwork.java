@@ -1,6 +1,7 @@
 package edu.iastate.cycmodeler.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 
@@ -170,128 +171,6 @@ public class ReactionNetwork {
 		return exchangeReactions;
 	}
 	
-//	public FilterResults initializeGenomeScaleReactionNetwork(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
-//		ArrayList<String> filter = new ArrayList<String>();
-//		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
-//		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
-//		ArrayList<AbstractReactionInstance> allReactions = new ArrayList<AbstractReactionInstance>();
-//		
-//		try {
-//			allReactions = reactionListToReactionInstances(Reaction.all(conn));
-//
-//			if (classToFilter != null) {
-//				for (String reactionClass : classToFilter) {
-//					for (Object reaction : conn.getClassAllInstances(reactionClass)) filter.add(reaction.toString());
-//				}
-//			}
-//			
-//			if (reactionsToFilter != null) {
-//				for (String reaction : reactionsToFilter) filter.add(reaction);
-//			}
-//		} catch (PtoolsErrorException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		for (AbstractReactionInstance reaction : allReactions) {
-//			if (reaction instanceof ReactionInstance) {
-//				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
-//				else keepList.add(reaction);
-//			}
-//		}
-//		
-//		for (AbstractReactionInstance reaction : keepList) {
-////			if any reactant or product is an instance of |Proteins|, |DNA|, |RNA|, than filter reaction out.
-//			for (MetaboliteInstance reactant : reaction.reactants_) {
-//				if ()
-//			}
-//		}
-//		
-//		addReactionsToNetwork(keepList);
-//		report.setFilteredReactions(removedList.size());
-//		
-//		return new FilterResults(keepList, removedList);
-//	}
-	
-//	//TODO rewrite with generic class/reaction/metabolite class
-//	public void initializeReactionNetwork() {
-//		ArrayList<AbstractReactionInstance> keepList2 = new ArrayList<AbstractReactionInstance>();
-//		
-//		try {
-//			ArrayList<Reaction> dbReactions = Reaction.all(conn);
-//			dbReactions.
-//			ArrayList<ReactionInstance> allReactions = reactionListToReactionInstances(Reaction.all(conn));
-//			ArrayList<ReactionInstance> keepList = new ArrayList<ReactionInstance>();
-//			ArrayList<ReactionInstance> removedList = new ArrayList<ReactionInstance>();
-//			
-//			for (ReactionInstance reaction : allReactions) {
-//				if (reaction.reactionFrame_.isGFPClass("|Polynucleotide-Reactions|")) removedList.add(reaction);
-//				else if (reaction.reactionFrame_.isGFPClass("|Protein-Reactions|")) removedList.add(reaction);
-//				else if (reaction.reactionFrame_.isGFPClass("|RNA-Reactions|")) removedList.add(reaction);
-//				else keepList.add(reaction);
-//			}
-//			
-//			for (ReactionInstance reaction : keepList) {
-//				ArrayList<MetaboliteInstance> mets = new ArrayList<MetaboliteInstance>();
-//				mets.addAll(reaction.reactants_);
-//				mets.addAll(reaction.products_);
-//				boolean match = false;
-//				for (MetaboliteInstance met : mets) {
-//					if (met.getMetaboliteFrame().isGFPClass("|Proteins|")) match = true;
-////					else if (met.getMetaboliteFrame().isGFPClass("|DNA-N|"))
-//					else if (met.getMetaboliteFrame().isGFPClass("|Nucleotides|")) match = true;
-//				}
-//				if (match) removedList.add(reaction);
-//				else keepList2.add(reaction);
-//			}
-//		} catch (PtoolsErrorException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		addReactionsToNetwork(keepList2);
-//	}
-	
-	
-//	/**
-//	 * Remove all Reactions from the ArrayList reactions_ which are either an instance of any of the EcoCyc classes in classToFilter, or
-//	 * are explicitly named with their EcoCyc Frame ID in the reactionsToFilter list. 
-//	 * 
-//	 * @param Reactions List of Reactions to which the filter will be applied
-//	 * @param classToFilter EcoCyc Frame ID of a class frame, instances of which should be removed from reactions
-//	 * @param reactionsToFilter EcoCyc Frame ID of a reaction frame which should be removed from reactions
-//	 * @return FilterResults containing the filtered reaction list and a list of reactions actually removed
-//	 */
-//	public FilterResults filterReactions(ArrayList<String> classToFilter, ArrayList<String> reactionsToFilter) {
-//		ArrayList<String> filter = new ArrayList<String>();
-//		ArrayList<AbstractReactionInstance> removedList = new ArrayList<AbstractReactionInstance>();
-//		ArrayList<AbstractReactionInstance> keepList = new ArrayList<AbstractReactionInstance>();
-//		
-//		try {
-//			if (classToFilter != null) {
-//				for (String reactionClass : classToFilter) {
-//					for (Object reaction : conn.getClassAllInstances(reactionClass)) filter.add(reaction.toString());
-//				}
-//			}
-//			
-//			if (reactionsToFilter != null) {
-//				for (String reaction : reactionsToFilter) filter.add(reaction);
-//			}
-//		} catch (PtoolsErrorException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		for (AbstractReactionInstance reaction : this.Reactions) {
-//			if (reaction instanceof ReactionInstance) {
-//				if (filter.contains(((ReactionInstance)reaction).reactionFrame_.getLocalID())) removedList.add(reaction);
-//				else keepList.add(reaction);
-//			}
-//		}
-//		
-//		addReactionsToNetwork(keepList);
-//		report.setFilteredReactions(removedList.size());
-//		
-//		return new FilterResults(keepList, removedList);
-//	}
-	
 	/**
 	 * Will take in a list of reactions, find any generic reactions (according to EcoCyc), and will attempt to return instances of the
 	 * generic reactions from data in EcoCyc.
@@ -307,7 +186,11 @@ public class ReactionNetwork {
 		
 		for (AbstractReactionInstance reaction : Reactions) {
 			if (reaction instanceof ReactionInstance) {
-				if (((ReactionInstance) reaction).isGenericReaction(CycModeler.conn)) {
+//				if (((ReactionInstance)reaction).reactionFrame_.getLocalID().equalsIgnoreCase("GLYCPDIESTER-RXN")) {
+//					System.out.println("Here");
+//				}
+				
+				if (reaction.isReactionGeneric()) {
 					instantiationResults.genericReactionsFound.add(reaction);
 					ArrayList<InstantiatedReactionInstance> instantiatedReactions = ((ReactionInstance) reaction).generateInstantiatedReactions();
 					if (instantiatedReactions != null && instantiatedReactions.size() > 0) {
@@ -321,10 +204,14 @@ public class ReactionNetwork {
 			}
 		}
 		
+		HashSet<AbstractReactionInstance> newReactionList = new HashSet<AbstractReactionInstance>();
+		newReactionList.addAll(instantiationResults.nonGenericReaction);
+		newReactionList.addAll(instantiationResults.instantiatedReactions);
+		Reactions = newReactionList;
 //		addReactionsToNetwork(instantiationResults.nonGenericReaction);
 		//Reactions = new HashSet<AbstractReactionInstance>();
-		for (AbstractReactionInstance genericReaction : instantiationResults.genericReactionsFailedToInstantiate) Reactions.remove(genericReaction);
-		addReactionsToNetwork(instantiationResults.instantiatedReactions);
+//		for (AbstractReactionInstance genericReaction : instantiationResults.genericReactionsFailedToInstantiate) Reactions.remove(genericReaction);
+//		addReactionsToNetwork(instantiationResults.instantiatedReactions);
 //		Reactions = instantiationResults.nonGenericReaction;
 //		Reactions.addAll(instantiationResults.instantiatedReactions);
 		
@@ -373,6 +260,81 @@ public class ReactionNetwork {
 		return transportReactionCount;
 	}
 	
+	public void removeCannotBalanceReactions() {
+		HashSet<AbstractReactionInstance> newReactionList = new HashSet<AbstractReactionInstance>();
+		System.out.println(Reactions.size());
+		for (AbstractReactionInstance reaction : Reactions) {
+			if (reaction instanceof ReactionInstance) {
+				try {
+					if (((ReactionInstance)reaction).reactionFrame_.getSlotValue("CANNOT-BALANCE?") != null) {
+						System.out.println("Removed reaction with cannot-balance set: " + ((ReactionInstance)reaction).reactionFrame_.getLocalID());
+					} else newReactionList.add(reaction);
+				} catch (PtoolsErrorException e) {
+					e.printStackTrace();
+				}
+			} else newReactionList.add(reaction);
+		}
+		Reactions = newReactionList;
+		System.out.println(Reactions.size());
+	}
+	
+	public void removeUnbalancedReactions() {
+		/*
+		 * Specifically removes non-generic unbalanced reactions.  Generic reactions are removed later, and instantiated reactions must be balanced to be kept.
+		 * Specific to ReactionInstance types, as they will have a reactionFrame_ on which to report what reactions were removed. It is assumed that
+		 * DiffusionReactionInstances and ExchangeReactionInstances must be balanced, as they transport a single metabolite through passive means.
+		 */
+		HashSet<AbstractReactionInstance> newReactionList = new HashSet<AbstractReactionInstance>();
+		System.out.println(Reactions.size());
+		for (AbstractReactionInstance reaction : Reactions) {
+			if (reaction instanceof ReactionInstance) {
+//				if (((ReactionInstance)reaction).reactionFrame_.getLocalID().equalsIgnoreCase("RXN0-5258")) {
+//					System.out.println("Here");
+//				}
+				if (reaction.isReactionGeneric()) {
+					newReactionList.add(reaction);
+				} else if (reaction.isReactionBalanced()) {
+					newReactionList.add(reaction);
+				} else {
+					System.out.println("Removed unbalanced reaction: " + ((ReactionInstance)reaction).reactionFrame_.getLocalID());
+				}
+			} else newReactionList.add(reaction);
+		}
+		Reactions = newReactionList;
+		System.out.println(Reactions.size());
+	}
+	
+	private void importJavacycReactions(ArrayList<Reaction> reactions) {
+		addReactionsToNetwork(reactionListToReactionInstances(reactions));
+	}
+	
+	public String generateHeatMap() {
+		HashMap<String,Integer> heatMap = new HashMap<String,Integer>();
+		for (AbstractReactionInstance reaction : Reactions) {
+			if (reaction instanceof ReactionInstance) {
+				String reactionID = ((ReactionInstance) reaction).reactionFrame_.getLocalID();
+				if (heatMap.containsKey(reactionID)) {
+					heatMap.put(reactionID, new Integer(10));
+				} else {
+					heatMap.put(reactionID, new Integer(10));
+				}
+			} else if (reaction instanceof InstantiatedReactionInstance) {
+				String reactionID = ((InstantiatedReactionInstance) reaction).parentReactionFrame_.getLocalID();
+				if (heatMap.containsKey(reactionID)) {
+					heatMap.put(reactionID, new Integer(-10));
+				} else {
+					heatMap.put(reactionID, new Integer(-10));
+				}
+			}
+		}
+		
+		String output = "";
+		for (String key : heatMap.keySet()) {
+			output += key + "\t" + heatMap.get(key) + "\n";
+		}
+		return output;
+	}
+	
 	/**
 	 * Convert an ArrayList of JavaCycO Reaction objects into an ArrayList of ReactionInstances
 	 * 
@@ -386,13 +348,11 @@ public class ReactionNetwork {
 			try {
 				ArrayList<String> locations = reaction.getSlotValues("RXN-LOCATIONS");
 				if (locations.size() > 1) {
-					//System.err.println("Split " + reaction.getLocalID() + " into " + (locations.size()));
-					//if (debug_) newReactionsFromReactionsSplitByLocation += locations.size()-1;
 					for (String location : locations) {
-//						reactionInstances.add(new ReactionInstance(null, reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
 						reactionInstances.add(new ReactionInstance(reaction, reaction.getLocalID() + "_" + location, reaction.isReversible(), location));
 					}
-				} else reactionInstances.addAll(ReactionInstance.getReactionInstanceFromReactionFrames(reaction));//new ReactionInstance(reaction));
+				} else if (locations.size() == 1) reactionInstances.add(new ReactionInstance(reaction, reaction.getLocalID(), reaction.isReversible(), locations.get(0)));
+				else reactionInstances.add(new ReactionInstance(reaction, reaction.getLocalID(), reaction.isReversible(), null)); //TODO default compartment
 			} catch (PtoolsErrorException e) {
 				e.printStackTrace();
 			}
@@ -401,64 +361,17 @@ public class ReactionNetwork {
 		return reactionInstances;
 	}
 	
-	private void addBiomassEquation() {
-		//TODO
-	}
-	
-	private void addATPMaintenanceEquation() {
-		//TODO
-//		<reaction id="R_ATPM" name="ATP maintenance requirement" reversible="false">
-//		<notes>
-//		<html:p>Abbreviation: R_ATPM</html:p>
-//		<html:p>Synonyms: _0</html:p>
-//		<html:p>SUBSYSTEM: Unassigned</html:p>
-//		<html:p>Equation: [c] : atp + h2o --&gt; adp + h + pi</html:p>
-//		<html:p>Confidence Level: 0</html:p>
-//		<html:p>GENE ASSOCIATION: </html:p>
-//		</notes>
-//		<listOfReactants>
-//		<speciesReference species="M_atp_c" stoichiometry="1"/>
-//		<speciesReference species="M_h2o_c" stoichiometry="1"/>
-//		</listOfReactants>
-//		<listOfProducts>
-//		<speciesReference species="M_adp_c" stoichiometry="1"/>
-//		<speciesReference species="M_h_c" stoichiometry="1"/>
-//		<speciesReference species="M_pi_c" stoichiometry="1"/>
-//		</listOfProducts>
-//		<kineticLaw>
-//		<math xmlns="http://www.w3.org/1998/Math/MathML">
-//		<ci>FLUX_VALUE</ci>
-//		</math>
-//		<listOfParameters>
-//		<parameter id="LOWER_BOUND" value="8.39" units="mmol_per_gDW_per_hr"/>
-//		<parameter id="UPPER_BOUND" value="8.39" units="mmol_per_gDW_per_hr"/>
-//		<parameter id="OBJECTIVE_COEFFICIENT" value="0" />
-//		<parameter id="FLUX_VALUE" value="0" units="mmol_per_gDW_per_hr"/>
-//		</listOfParameters>
-//		</kineticLaw>
-//		</reaction>
-	}
-	
-	// Network Verification Steps
-	private void verifyNetwork() {
-		//TODO
-	}
-	
-	public void importJavacycReactions(ArrayList<Reaction> reactions) {
-		addReactionsToNetwork(reactionListToReactionInstances(reactions));
-	}
-	
-	public void addReactionsToNetwork(ArrayList<AbstractReactionInstance> reactions) {
-		//TODO Detect and handle duplicates.
+	private void addReactionsToNetwork(ArrayList<AbstractReactionInstance> reactions) {
 		for (AbstractReactionInstance reaction : reactions) {
 			if (Reactions.contains(reaction)) {
 				for (AbstractReactionInstance aReaction : Reactions) {
-					if (aReaction.equals(reaction)) {
+					if (aReaction.equals(reaction) && !aReaction.name_.equalsIgnoreCase(reaction.name_)) {
+						//TODO Detect and handle duplicates. In particular, do we ever want to merge duplicates? Sometimes they may have different gene associations
 						System.err.println("Duplicate Reaction: " + ((ReactionInstance)aReaction).reactionFrame_.getLocalID() + " = " + ((ReactionInstance)reaction).reactionFrame_.getLocalID());
+						break;
 					}
 				}
-			}
-			Reactions.add(reaction);
+			} else Reactions.add(reaction);
 		}
 	}
 	
@@ -481,6 +394,7 @@ public class ReactionNetwork {
 			this.nonGenericReaction = nonGenericReaction;
 		}
  	}
+ 	
  	
  	/**
 	 * Internal class to hold the results of filtering reactions to be excluded from the reaction set.
