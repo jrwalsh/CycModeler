@@ -68,12 +68,12 @@ public class InstantiatedReactionInstance extends AbstractReactionInstance {
 	@Override
 	public String printReaction() {
 		String printString = "";
-		printString += "InstantiatedReactionInstance" + "\t" + this.name_ + "\t" + this.parentReactionFrame_ + "\t";
+		printString += "InstantiatedReactionInstance" + "\t" + this.name_ + "\t" + this.parentReactionFrame_.getLocalID() + "\t";
 		for (MetaboliteInstance reactant : reactants_) {
-			printString += reactant.getMetaboliteID();
+			printString += reactant.getMetaboliteID() + "\t";
 		}
 		for (MetaboliteInstance product : products_) {
-			printString += product.getMetaboliteID();
+			printString += product.getMetaboliteID() + "\t";
 		}
 		return printString;
 	}

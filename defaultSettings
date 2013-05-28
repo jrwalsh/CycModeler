@@ -1,6 +1,6 @@
 HOST jrwalsh.student.iastate.edu
 PORT 4444
-ORGANISM ECOLI
+ORGANISM CBIRC
 USER me
 PASSWORD pass
 OUTPUTDIRECTORY /home/jesse/Desktop/output/

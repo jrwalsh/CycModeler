@@ -25,14 +25,6 @@ public class ReactionInstance extends AbstractReactionInstance {
 	public String reactantSlot_;
 	public String productSlot_;
 	
-	// Convert javacyco reactions to cycmodeler reactionInstances
-	public static ArrayList<ReactionInstance> getReactionInstanceFromReactionFrames(Reaction reactionFrame) throws PtoolsErrorException {
-		ArrayList<ReactionInstance> reactionInstances = new ArrayList<ReactionInstance>();
-		//TODO if the reaction is in multiple locations, we need to make multiple reactions
-		reactionInstances.add(new ReactionInstance(reactionFrame, reactionFrame.getCommonName(), reactionFrame.isReversible(), null));
-		return reactionInstances;
-	}
-	
 	// Initializes the reactants and products to the values in the biocyc database for the given reactionFrame
 	public ReactionInstance(Reaction reactionFrame, String name, boolean reversible, String specificLocation) {
 		this(reactionFrame, name, reversible, specificLocation, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
@@ -63,7 +55,7 @@ public class ReactionInstance extends AbstractReactionInstance {
 	 * 
 	 * @return List of newly created, elementally balanced reaction instances
 	 */
-	protected ArrayList<InstantiatedReactionInstance> generateInstantiatedReactions() {
+	public ArrayList<InstantiatedReactionInstance> generateInstantiatedReactions() {
 		ArrayList<InstantiatedReactionInstance> newReactions = new ArrayList<InstantiatedReactionInstance>();
 		
 		ArrayList<MetaboliteInstance> genericReactants = new ArrayList<MetaboliteInstance>();
@@ -77,7 +69,7 @@ public class ReactionInstance extends AbstractReactionInstance {
 				return null;
 			}
 			
-			//If reaction has specific forms, then assume those forms are already in the model
+			//If reaction has specific forms, then assume those forms are already in the model //TODO get these explicitly, don't assume already in
 			if (CycModeler.conn.specificFormsOfReaction(reactionFrame_.getLocalID()).size() > 0) {
 				Report.instantiation.add("Reaction " + reactionFrame_.getLocalID() + " reports having reaction instances, skipping.");
 				return null;//TODO should not assume these reactions are already there.  try to add them, and if they are duplicates they will not be added
@@ -127,6 +119,8 @@ public class ReactionInstance extends AbstractReactionInstance {
 				
 				ListCombinations termCombinations = ListCombinations.listCombinations(CycModeler.conn, genericReactants, genericProducts);
 				
+				if (termCombinations == null) return null; // ie no instances of generic metabolite available
+				
 				// For each combination, create a new reaction for it if the reaction is elementally balanced
 				for (ArrayList<String> combinationSet : termCombinations.listOfTuples) {
 					InstantiatedReactionInstance newReaction = new InstantiatedReactionInstance(reactionFrame_, "", reversible_, reactionLocation_, new HashSet<MetaboliteInstance>(), new HashSet<MetaboliteInstance>());
@@ -152,9 +146,10 @@ public class ReactionInstance extends AbstractReactionInstance {
 					}
 					
 					// If the chosen metabolite instances result in a balanced elemental equation, include it in the new reactionInstances to be returned.
-					if (newReaction.isReactionGeneric()) {
-						Report.instantiation.add("Attempt to instantiate " + reactionFrame_.getLocalID() + " resulted in another generic reaction. This should not happen.");
-					} else if (!newReaction.isReactionBalanced()) {
+//					if (newReaction.isReactionGeneric()) {  //TODO simply having it be generic does not mean it cannot be balanced.  some generics have formulae
+//						Report.instantiation.add("Attempt to instantiate " + reactionFrame_.getLocalID() + " resulted in another generic reaction. This should not happen.");
+//					} else 
+					if (!newReaction.isReactionBalanced()) {
 						Report.instantiation.add("Attempt to instantiate " + reactionFrame_.getLocalID() + " resulted in unbalanced equation.");
 					} else {
 						newReaction.name_ = newReaction.parentReactionFrame_.getCommonName();
@@ -206,29 +201,6 @@ public class ReactionInstance extends AbstractReactionInstance {
 		else return CycModeler.convertToSBMLSafe(CycModeler.parameters.ReactionPrefix + "_" + baseID);
 	}
 	
-	/**
-	 * Test if a reaction is a generic reaction (i.e., it must contain at least one class frame in its reactions or products).
-	 * 
-	 * @return True if reaction is generic.
-	 */
-	@SuppressWarnings("unchecked")
-	protected boolean isGenericReaction(JavacycConnection conn) {
-		try {
-			ArrayList<String> leftMetabolites = reactionFrame_.getSlotValues("LEFT");
-			ArrayList<String> rightMetabolites = reactionFrame_.getSlotValues("RIGHT");
-			
-			for (String left : leftMetabolites) {
-				if (conn.getFrameType(left).toUpperCase().equals(":CLASS")) return true;
-			}
-			
-			for (String right : rightMetabolites) {
-				if (conn.getFrameType(right).toUpperCase().equals(":CLASS")) return true;
-			}
-		} catch (PtoolsErrorException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
 	
 	/**
 	 * Return gene-reaction associations as a string of EcoCyc gene frame IDs in a boolean logic format. This format

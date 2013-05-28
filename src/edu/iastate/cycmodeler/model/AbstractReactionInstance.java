@@ -66,11 +66,12 @@ public abstract class AbstractReactionInstance {
 			e.printStackTrace();
 			return false;
 		} catch (Exception e) {
+			System.err.println("Could not determing balance for reaction: " + name_);
 			return false;
 		}
 		
 		try {
-			elementalDiff(reactantElements, productElements);
+			return elementalDiff(reactantElements, productElements);
 		} catch(Exception e) {
 			String reactants = "";
 			String products = "";
@@ -79,21 +80,22 @@ public abstract class AbstractReactionInstance {
 			System.err.println("Could not do a diff on reaction " + ((InstantiatedReactionInstance)this).parentReactionFrame_.getLocalID() + " using the reactants " + reactants + " and products " + products);
 		}
 		
+		return false;
 		
-		if (!reactantElements.keySet().containsAll(productElements.keySet()) || !productElements.keySet().containsAll(reactantElements.keySet())) return false;
-		for (String key : reactantElements.keySet()) {
-//			if (key.equalsIgnoreCase("H")) { //TODO account for reactions which fail to match by commonly omitted elements
-//				if (reactantElements.get(key) - productElements.get(key) == 1 || reactantElements.get(key) - productElements.get(key) == -1) {
-//					System.out.println("Save reaction with a proton.");
-//				}
-//			}
-			if (reactantElements.get(key) != productElements.get(key)) return false;
-		}
-		
-		return true;
+//		if (!reactantElements.keySet().containsAll(productElements.keySet()) || !productElements.keySet().containsAll(reactantElements.keySet())) return false;
+//		for (String key : reactantElements.keySet()) {
+////			if (key.equalsIgnoreCase("H")) { //TODO account for reactions which fail to match by commonly omitted elements
+////				if (reactantElements.get(key) - productElements.get(key) == 1 || reactantElements.get(key) - productElements.get(key) == -1) {
+////					System.out.println("Save reaction with a proton.");
+////				}
+////			}
+//			if (reactantElements.get(key) != productElements.get(key)) return false;
+//		}
+//		
+//		return true;
 	}
 	
-	private void elementalDiff(HashMap<String, Integer> reactantElements, HashMap<String, Integer> productElements) {
+	private boolean elementalDiff(HashMap<String, Integer> reactantElements, HashMap<String, Integer> productElements) {
 		HashMap<String, Integer> elementalDiff = new HashMap<String, Integer>();
 		
 		elementalDiff.putAll(reactantElements);
@@ -101,14 +103,17 @@ public abstract class AbstractReactionInstance {
 			if (elementalDiff.containsKey(key)) {
 				elementalDiff.put(key, elementalDiff.get(key) - productElements.get(key));
 			} else elementalDiff.put(key, 0 - productElements.get(key));
-			
 		}
+		for (String key : elementalDiff.keySet()) {
+			if (elementalDiff.get(key) != 0) return false;
+		}
+		return true;
 		
-		if (elementalDiff.keySet().size() == 1 && elementalDiff.keySet().contains("H")) {
-			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s).");
-		} else if (elementalDiff.keySet().size() == 2 && elementalDiff.keySet().contains("H") && elementalDiff.keySet().contains("O")) {
-			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s) and " + elementalDiff.get("O") + " O atom(s).");
-		}
+//		if (elementalDiff.keySet().size() == 1 && elementalDiff.keySet().contains("H")) {
+//			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s).");
+//		} else if (elementalDiff.keySet().size() == 2 && elementalDiff.keySet().contains("H") && elementalDiff.keySet().contains("O")) {
+//			System.err.println("Reaction " + this.name_ + " doesn't balance over " + elementalDiff.get("H") + " H atom(s) and " + elementalDiff.get("O") + " O atom(s).");
+//		}
 	}
 
 	protected boolean isReactionGeneric() {

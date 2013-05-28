@@ -10,10 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import edu.iastate.cycmodeler.logic.CycModeler;
-import edu.iastate.cycmodeler.model.AbstractReactionInstance;
-import edu.iastate.cycmodeler.util.MyParameters.Setting;
 import edu.iastate.javacyco.Frame;
-import edu.iastate.javacyco.JavacycConnection;
 import edu.iastate.javacyco.Pathway;
 import edu.iastate.javacyco.PtoolsErrorException;
 import edu.iastate.javacyco.Reaction;
