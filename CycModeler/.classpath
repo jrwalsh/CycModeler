@@ -3,11 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/PathwayAccess"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/usr/local/share/java/libsbmlj.jar">
-		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/usr/local/lib"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/jesse/workspace/commons-lang3-3.1/commons-lang3-3.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Jesse/workspace/mysql-connector-java-5.1.15"/>
+	<classpathentry kind="lib" path="C:/Users/Jesse/workspace/libsbmlj.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Jesse/workspace/commons-lang3-3.1/commons-lang3-3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
