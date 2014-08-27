@@ -1,13 +1,27 @@
 package edu.iastate.cycmodeler;
 
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+
 import edu.iastate.cycmodeler.logic.CycModeler;
 import edu.iastate.cycmodeler.util.MyParameters;
+import edu.iastate.cycmodeler.view.DefaultController;
+import edu.iastate.cycmodeler.view.LoginPanel;
+import edu.iastate.cycmodeler.view.MainCardPanel;
+import edu.iastate.cycmodeler.view.OptionPanel;
 import edu.iastate.javacyco.JavacycConnection;
 
 /**
  * Main class for the CycModeler class.
  * 
- * @author Jesse Walsh
+ * @author Jesse R. Walsh
  *
  */
 public class Main {
@@ -75,11 +89,68 @@ public class Main {
 		String configFile = args[0];
 		String reactionConfigFile = args[1];
 		
-		Long start = System.currentTimeMillis();
-		run(configFile, reactionConfigFile);
-		Long stop = System.currentTimeMillis();
-		Long runtime = (stop - start) / 1000;
-		System.out.println("Runtime is " + runtime + " seconds.");
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+		        createAndShowGUI();
+		    }
+		});
+		
+		
+//		Long start = System.currentTimeMillis();
+//		run(configFile, reactionConfigFile);
+//		Long stop = System.currentTimeMillis();
+//		Long runtime = (stop - start) / 1000;
+//		System.out.println("Runtime is " + runtime + " seconds.");
+	}
+	
+	private static void createAndShowGUI() {
+//		run(configFile, reactionConfigFile);
+		DefaultController controller = new DefaultController();
+		
+		MainCardPanel cardPanel = new MainCardPanel();
+		cardPanel.add(new LoginPanel(controller), MainCardPanel.loginCard);
+		cardPanel.add(new OptionPanel(controller), MainCardPanel.optionCard);
+		
+		controller.setMainCardPanel(cardPanel);
+		
+		JFrame displayFrame = new JFrame("CycBrowser");
+		controller.setMainJFrame(displayFrame);
+		
+		displayFrame.setResizable(false);
+		displayFrame.setPreferredSize(new Dimension(835, 435));
+		GridBagLayout gridBagLayout = new GridBagLayout();
+		gridBagLayout.columnWidths = new int[]{800, 0};
+		gridBagLayout.rowHeights = new int[]{35, 400, 30, 0};
+		gridBagLayout.columnWeights = new double[]{0.0, Double.MIN_VALUE};
+		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, Double.MIN_VALUE};
+		displayFrame.getContentPane().setLayout(gridBagLayout);
+		
+		GridBagConstraints gbc_toolPanel = new GridBagConstraints();
+		gbc_toolPanel.fill = GridBagConstraints.HORIZONTAL;
+		gbc_toolPanel.anchor = GridBagConstraints.NORTH;
+		gbc_toolPanel.insets = new Insets(0, 0, 5, 0);
+		gbc_toolPanel.gridx = 0;
+		gbc_toolPanel.gridy = 0;
+		
+		GridBagConstraints gbc_cardPanel = new GridBagConstraints();
+		gbc_cardPanel.fill = GridBagConstraints.HORIZONTAL;
+		gbc_cardPanel.anchor = GridBagConstraints.NORTH;
+		gbc_cardPanel.insets = new Insets(0, 0, 5, 0);
+		gbc_cardPanel.gridx = 0;
+		gbc_cardPanel.gridy = 1;
+		displayFrame.getContentPane().add(cardPanel, gbc_cardPanel);
+		
+		GridBagConstraints gbc_statusPanel = new GridBagConstraints();
+		gbc_statusPanel.fill = GridBagConstraints.HORIZONTAL;
+		gbc_statusPanel.anchor = GridBagConstraints.NORTH;
+		gbc_statusPanel.gridx = 0;
+		gbc_statusPanel.gridy = 2;
+		
+        displayFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        displayFrame.pack();
+        
+        displayFrame.setLocationRelativeTo(null);
+        displayFrame.setVisible(true);
 	}
 	
 	/**
